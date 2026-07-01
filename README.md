@@ -78,6 +78,17 @@ When no project directories are provided, the current working directory is recur
 }
 ```
 
+## Example
+
+The [`example`](example) directory contains a small monorepo with two packages, each using a different ruleset (`PSR12` and `WordPress`), wired up via `composer.json` `lint`/`format` scripts:
+
+```bash
+cd example
+composer install
+composer lint
+composer format
+```
+
 ## Development
 
 Run the same checks used by CI:
