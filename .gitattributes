@@ -1,0 +1,4 @@
+/.github export-ignore
+/example export-ignore
+/tests export-ignore
+/*.xml.dist export-ignore

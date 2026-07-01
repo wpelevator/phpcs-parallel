@@ -17,37 +17,27 @@ composer require --dev wpelevator/phpcs-parallel
 Run PHPCS for every matched config:
 
 ```bash
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
-  --processes=4
+vendor/bin/phpcs-parallel --config-pattern='packages/*' --processes=4
 ```
 
 Pass PHPCS options after `--`:
 
 ```bash
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
-  --processes=4 \
-  -- -s --report=summary
+vendor/bin/phpcs-parallel --config-pattern='packages/*' --processes=4 -- -s --report=summary
 ```
 
 Run PHPCBF the same way:
 
 ```bash
-vendor/bin/phpcbf-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
-  --processes=4
+vendor/bin/phpcbf-parallel --config-pattern='packages/*' --processes=4
 ```
 
-You can repeat `--config-pattern` or provide comma-separated patterns:
+You can repeat `--config-pattern` or provide comma-separated patterns. Patterns are shell-style globs matched with PHP `fnmatch()`, not regular expressions. They may match either project directories or config files:
 
 ```bash
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
-  --config-pattern='apps/*/phpcs.xml.dist'
+vendor/bin/phpcs-parallel --config-pattern='packages/*' --config-pattern='apps/*/phpcs.xml.dist'
 
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist,apps/*/phpcs.xml.dist'
+vendor/bin/phpcs-parallel --config-pattern='packages/*,apps/*/phpcs.xml.dist'
 ```
 
 Each matched config runs as:
@@ -65,17 +55,28 @@ When project directories are provided explicitly, each directory uses the first 
 3. `.phpcs.xml.dist`
 4. `phpcs.xml.dist`
 
-When no project directories are provided, the current working directory is recursively searched for matching config files. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
+When no project directories are provided, the current working directory is recursively searched for matching config files. `--config-pattern` can match either project directory paths or config file paths. Patterns use shell-style glob syntax, for example `packages/*` or `apps/*/phpcs.xml.dist`; regex syntax such as `packages/(foo|bar)` or `packages/.+` is not supported. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
 
 ## Composer scripts
 
 ```json
 {
   "scripts": {
-    "lint": "phpcs-parallel --config-pattern='packages/*/phpcs.xml.dist' --processes=4 -- -s",
-    "format": "phpcbf-parallel --config-pattern='packages/*/phpcs.xml.dist' --processes=4"
+    "lint": "phpcs-parallel --config-pattern='packages/*' --processes=4 -- -s",
+    "format": "phpcbf-parallel --config-pattern='packages/*' --processes=4"
   }
 }
+```
+
+## Example
+
+The [`example`](example) directory contains a small monorepo with two packages, each using a different ruleset (`PSR12` and `WordPress`), wired up via `composer.json` `lint`/`format` scripts:
+
+```bash
+cd example
+composer install
+composer lint
+composer format
 ```
 
 ## Development

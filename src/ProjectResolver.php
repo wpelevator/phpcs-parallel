@@ -128,11 +128,18 @@ final class ProjectResolver
     private function matchesAnyConfigPattern(string $path, array $patterns, string $cwd): bool
     {
         $normalizedPath = str_replace('\\', '/', $path);
+        $normalizedRoot = str_replace('\\', '/', dirname($path));
         $relativePath = $this->relativeToCwd($normalizedPath, $cwd);
+        $relativeRoot = $this->relativeToCwd($normalizedRoot, $cwd);
 
         foreach ($patterns as $pattern) {
-            $normalizedPattern = str_replace('\\', '/', $pattern);
-            if (fnmatch($normalizedPattern, $relativePath) || fnmatch($normalizedPattern, $normalizedPath)) {
+            $normalizedPattern = rtrim(str_replace('\\', '/', $pattern), '/');
+            if (
+                fnmatch($normalizedPattern, $relativePath)
+                || fnmatch($normalizedPattern, $normalizedPath)
+                || fnmatch($normalizedPattern, $relativeRoot)
+                || fnmatch($normalizedPattern, $normalizedRoot)
+            ) {
                 return true;
             }
         }

@@ -1,0 +1,25 @@
+{
+    "name": "wpelevator/phpcs-parallel-example",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require-dev": {
+        "wpelevator/phpcs-parallel": "@dev",
+        "wp-coding-standards/wpcs": "^3.3"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "lint": "phpcs-parallel --config-pattern='packages/*/phpcs.xml,packages/*/phpcs.xml.dist' --processes=2",
+        "format": "phpcbf-parallel --config-pattern='packages/*/phpcs.xml,packages/*/phpcs.xml.dist' --processes=2"
+    }
+}
