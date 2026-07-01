@@ -1,6 +1,6 @@
 {
-    "name": "wpelevator/phpcs-parallel",
-    "description": "Run PHPCS and PHPCBF across monorepos with isolated per-project configs, optionally in parallel.",
+    "name": "wpelevator/pharallel",
+    "description": "Run one command per matched path, optionally in parallel.",
     "type": "library",
     "license": "MIT",
     "require": {
@@ -19,8 +19,7 @@
         }
     },
     "bin": [
-        "bin/phpcs-parallel",
-        "bin/phpcbf-parallel"
+        "bin/pharallel"
     ],
     "scripts": {
         "lint": "phpcs",

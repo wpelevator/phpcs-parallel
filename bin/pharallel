@@ -4,4 +4,4 @@
 require __DIR__ . '/../src/bootstrap.php';
 
 $application = (new \WPElevator\PHPCSParallel\ApplicationFactory())->create();
-exit($application->run('phpcbf', $argv));
+exit($application->run($argv));

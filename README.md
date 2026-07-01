@@ -1,82 +1,220 @@
-# phpcs-parallel
+# pharallel
 
-[![Test](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml)
+[![Test](https://github.com/wpelevator/pharallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/pharallel/actions/workflows/ci.yml)
 
-Run [PHPCS](https://github.com/PHPCSStandards/PHP_CodeSniffer/) once per project ruleset, optionally in parallel.
+Run one command per matched path, optionally in parallel.
 
-This is useful for monorepos where each package has its own `phpcs.xml.dist`. Instead of merging those rulesets into one PHPCS run, `phpcs-parallel` runs an isolated PHPCS process for each matched config.
+`pharallel` is useful for PHP monorepos where each package has its own tool config. It discovers paths, renders one command per path, and executes those commands with prefixed output.
 
 ## Install
 
 ```bash
-composer require --dev wpelevator/phpcs-parallel
+composer require --dev wpelevator/pharallel
 ```
 
 ## Usage
 
-Run PHPCS for every matched config:
+At its simplest, provide a path pattern and a command template:
 
 ```bash
-vendor/bin/phpcs-parallel --config-pattern='packages/*' --processes=4
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpstan.neon' \
+  --command='phpstan analyse --configuration={path} {path | dirname}'
 ```
 
-Pass PHPCS options after `--`:
+Run tasks in parallel with `--processes`:
 
 ```bash
-vendor/bin/phpcs-parallel --config-pattern='packages/*' --processes=4 -- -s --report=summary
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpstan.neon' \
+  --command='phpstan analyse --configuration={path} {path | dirname} --memory-limit=1G' \
+  --processes=4
 ```
 
-Run PHPCBF the same way:
+Use `--cwd` when a tool should run from the matched package directory:
 
 ```bash
-vendor/bin/phpcbf-parallel --config-pattern='packages/*' --processes=4
+vendor/bin/pharallel \
+  --path-pattern='packages/*/composer.json' \
+  --command='composer test' \
+  --cwd='{path | dirname}' \
+  --processes=4
 ```
 
-You can repeat `--config-pattern` or provide comma-separated patterns. Patterns are shell-style globs matched with PHP `fnmatch()`, not regular expressions. They may match either project directories or config files:
+When `--cwd` is set, use `{path | realpath}` for file paths that must still point back to the matched file:
 
 ```bash
-vendor/bin/phpcs-parallel --config-pattern='packages/*' --config-pattern='apps/*/phpcs.xml.dist'
-
-vendor/bin/phpcs-parallel --config-pattern='packages/*,apps/*/phpcs.xml.dist'
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpunit.xml.dist' \
+  --command='phpunit --configuration={path | realpath}' \
+  --cwd='{path | dirname}' \
+  --processes=4
 ```
 
-Each matched config runs as:
+Use `--label` when you want custom output prefixes:
 
 ```bash
-phpcs --standard=/path/to/package/phpcs.xml.dist /path/to/package
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpunit.xml.dist' \
+  --command='phpunit --configuration={path}' \
+  --label='{path | dirname | basename}' \
+  --processes=4
 ```
 
-## Config resolution
+Options:
 
-When project directories are provided explicitly, each directory uses the first config found in that directory, falling back to the nearest parent config. Config names are checked in this order:
+| Option | Description |
+| --- | --- |
+| `--path-pattern=GLOB` | Match paths to create tasks. Repeatable; comma-separated values are supported. |
+| `--command=TEMPLATE` | Command template rendered once per matched path. |
+| `--processes=N` | Number of commands to run at once. Default: `1`. |
+| `--cwd=TEMPLATE` | Working directory template for each task. Default: invocation directory. |
+| `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`. |
+| `--config=PATH` | PHP config file for custom filters, variables, and defaults. |
 
-1. `.phpcs.xml`
-2. `phpcs.xml`
-3. `.phpcs.xml.dist`
-4. `phpcs.xml.dist`
+Template variables and filters:
 
-When no project directories are provided, the current working directory is recursively searched for matching config files. `--config-pattern` can match either project directory paths or config file paths. Patterns use shell-style glob syntax, for example `packages/*` or `apps/*/phpcs.xml.dist`; regex syntax such as `packages/(foo|bar)` or `packages/.+` is not supported. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
+| Syntax | Description |
+| --- | --- |
+| `{path}` | Matched path, rendered relative to the invocation directory when possible. |
+| `{index}` | Zero-based task index. |
+| `dirname`, `basename`, `realpath`, `relative`, `slug`, `ext`, `filename` | Supported filters. |
+
+Commands are executed directly as argv, not through a shell. Pipes, redirects, and shell expansion are not interpreted.
+
+`--cwd` changes the child process working directory, but template variables are still rendered relative to the original invocation directory. Use `{path | realpath}` when the child process needs an absolute path.
+
+## Configuration
+
+Use `--config=pharallel.php` to load custom filters, variables, and default option values.
+
+```php
+<?php
+
+return [
+    'filters' => [
+        'package' => static function (string $path): string {
+            return basename(dirname($path));
+        },
+    ],
+
+    'variables' => [
+        'php' => PHP_BINARY,
+    ],
+
+    'defaults' => [
+        'path-pattern' => 'packages/*/composer.json',
+        'command' => '{php} vendor/bin/phpunit',
+        'cwd' => '{path | dirname}',
+        'label' => '{path | package}',
+        'processes' => 4,
+    ],
+];
+```
+
+Then run:
+
+```bash
+vendor/bin/pharallel --config=pharallel.php
+```
+
+CLI options override config defaults, so you can still replace individual values:
+
+```bash
+vendor/bin/pharallel \
+  --config=pharallel.php \
+  --command='composer test'
+```
+
+Custom filters receive the current value, the current task, and the invocation working directory:
+
+```php
+'filters' => [
+    'artifactName' => static function (string $value, \WPElevator\PHPCSParallel\Task $task, string $cwd): string {
+        return $task->index . '-' . basename(dirname($value));
+    },
+],
+```
+
+## Examples
+
+### PHPCS
+
+Run PHPCS once per package ruleset:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpcs.xml.dist' \
+  --command='phpcs --standard={path} {path | dirname}'
+```
+
+Run PHPCS in parallel and pass PHPCS options directly in the command template:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpcs.xml.dist' \
+  --command='phpcs --standard={path} {path | dirname} -s --report=summary' \
+  --processes=4
+```
+
+If your project uses multiple PHPCS config names, repeat `--path-pattern`:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/.phpcs.xml' \
+  --path-pattern='packages/*/phpcs.xml' \
+  --path-pattern='packages/*/.phpcs.xml.dist' \
+  --path-pattern='packages/*/phpcs.xml.dist' \
+  --command='phpcs --standard={path} {path | dirname}' \
+  --processes=4
+```
+
+### PHPCBF
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpcs.xml.dist' \
+  --command='phpcbf --standard={path} {path | dirname}' \
+  --processes=4
+```
+
+### PHPStan
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpstan.neon' \
+  --command='phpstan analyse --configuration={path} {path | dirname} --memory-limit=1G' \
+  --processes=4
+```
+
+### PHPUnit
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpunit.xml.dist' \
+  --command='phpunit --configuration={path}' \
+  --processes=4
+```
+
+### Composer scripts
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/composer.json' \
+  --command='composer test' \
+  --cwd='{path | dirname}' \
+  --processes=4
+```
 
 ## Composer scripts
 
 ```json
 {
   "scripts": {
-    "lint": "phpcs-parallel --config-pattern='packages/*' --processes=4 -- -s",
-    "format": "phpcbf-parallel --config-pattern='packages/*' --processes=4"
+    "lint": "pharallel --path-pattern='packages/*/phpcs.xml.dist' --command='phpcs --standard={path} {path | dirname} -s' --processes=4",
+    "test:packages": "pharallel --path-pattern='packages/*/phpunit.xml.dist' --command='phpunit --configuration={path}' --processes=4"
   }
 }
-```
-
-## Example
-
-The [`example`](example) directory contains a small monorepo with two packages, each using a different ruleset (`PSR12` and `WordPress`), wired up via `composer.json` `lint`/`format` scripts:
-
-```bash
-cd example
-composer install
-composer lint
-composer format
 ```
 
 ## Development
@@ -92,8 +230,8 @@ composer test
 Run a specific test suite:
 
 ```bash
-vendor/bin/phpunit --testsuite Unit
-vendor/bin/phpunit --testsuite Integration
+composer test -- --testsuite=Unit
+composer test -- --testsuite=Integration
 ```
 
 Generate PHPUnit coverage reports (requires Xdebug or PCOV):
@@ -107,9 +245,9 @@ Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `te
 ## Notes
 
 - Dependency directories are skipped during discovery: `.git`, `vendor`, `node_modules`, `bower_components`.
-- The wrapper returns the highest child exit code for PHPCS/PHPCBF lint/fix results. Runtime/tool errors are promoted to at least exit code `3`.
-- Child process output is streamed through Symfony Console and prefixed with the project label.
-- Use explicit project directories instead of patterns if needed: `vendor/bin/phpcs-parallel packages/foo packages/bar`.
+- Child process output is streamed through Symfony Console and prefixed with the task label.
+- The command returns the highest child exit code for normal tool failures. Runtime/tooling errors are promoted to at least exit code `3`.
+- File-modifying tools are safe only when matched paths do not overlap.
 
 ## License
 
