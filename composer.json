@@ -26,6 +26,7 @@
         "lint": "phpcs",
         "format": "phpcbf",
         "analyse": "phpstan analyse",
-        "test": "phpunit"
+        "test": "phpunit",
+        "test:coverage": "phpunit --coverage-text --coverage-clover=tests/coverage/clover.xml --coverage-html=tests/coverage/html"
     }
 }

@@ -96,6 +96,14 @@ vendor/bin/phpunit --testsuite Unit
 vendor/bin/phpunit --testsuite Integration
 ```
 
+Generate PHPUnit coverage reports (requires Xdebug or PCOV):
+
+```bash
+composer test:coverage
+```
+
+Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `tests/coverage/html`.
+
 ## Notes
 
 - Dependency directories are skipped during discovery: `.git`, `vendor`, `node_modules`, `bower_components`.
