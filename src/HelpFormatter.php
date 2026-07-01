@@ -15,7 +15,7 @@ Usage:
   {$binary} [options] [project-dir ...] [-- {$tool} options]
 
 Options:
-  --config-pattern=GLOB  Discover configs matching the glob. Repeatable.
+  --config-pattern=GLOB  Discover configs or project dirs matching the glob. Repeatable.
   --processes=N         Number of {$tool} processes to run at once. Default: 1.
   --bin=PATH            Path to the {$tool} binary. Default: vendor/bin/{$tool}.
   -h, --help            Show this help.
@@ -26,8 +26,8 @@ Config resolution:
   Project dirs and --config-pattern discovery are combined and deduplicated by project root.
 
 Examples:
-  {$binary} --config-pattern='wp-content/plugins/*/phpcs.xml.dist' --processes=4 -- -s
-  {$binary} --config-pattern='wp-content/plugins/*/phpcs.xml.dist' --config-pattern='wp-content/themes/*/phpcs.xml.dist'
+  {$binary} --config-pattern='wp-content/plugins/*' --processes=4 -- -s
+  {$binary} --config-pattern='wp-content/plugins/*/phpcs.xml.dist' --config-pattern='wp-content/themes/*'
   {$binary} wp-content/plugins/foo wp-content/themes/bar -- --report=summary
 
 TXT;

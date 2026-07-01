@@ -82,6 +82,31 @@ final class ProjectResolverTest extends TestCase
         self::assertSame([$pluginConfig, $themeConfig], array_column($projects, 'configFile'));
     }
 
+    public function testDiscoveryCanBeFilteredWithDirectoryPatterns(): void
+    {
+        $pluginConfig = $this->touchConfig('plugins/plugin-a/phpcs.xml.dist');
+        $themeConfig = $this->touchConfig('themes/theme-a/phpcs.xml.dist');
+        $this->touchConfig('tools/tool-a/phpcs.xml.dist');
+
+        $projects = $this->resolver->resolve(
+            [],
+            ['plugins/*', $this->realPath('themes') . '/*'],
+            $this->tmpDir
+        );
+
+        self::assertSame([$pluginConfig, $themeConfig], array_column($projects, 'configFile'));
+    }
+
+    public function testDiscoveryCanBeFilteredWithTrailingSlashDirectoryPatterns(): void
+    {
+        $config = $this->touchConfig('plugins/plugin-a/phpcs.xml.dist');
+        $this->touchConfig('tools/tool-a/phpcs.xml.dist');
+
+        $projects = $this->resolver->resolve([], ['plugins/plugin-a/'], $this->tmpDir);
+
+        self::assertSame([$config], array_column($projects, 'configFile'));
+    }
+
     public function testDiscoverySkipsDependencyDirectories(): void
     {
         $appConfig = $this->touchConfig('app/phpcs.xml.dist');

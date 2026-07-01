@@ -154,6 +154,35 @@ final class ApplicationTest extends TestCase
         }
     }
 
+    public function testConfigPatternSupportsDirectoryPatterns(): void
+    {
+        $dir = self::makeTmpDir();
+
+        try {
+            mkdir($dir . '/plugins/plugin-a', 0777, true);
+            mkdir($dir . '/themes/theme-a', 0777, true);
+            mkdir($dir . '/tools/tool-a', 0777, true);
+            file_put_contents($dir . '/plugins/plugin-a/phpcs.xml.dist', '<ruleset/>');
+            file_put_contents($dir . '/themes/theme-a/phpcs.xml.dist', '<ruleset/>');
+            file_put_contents($dir . '/tools/tool-a/phpcs.xml.dist', '<ruleset/>');
+            self::writeFakePhpcs($dir . '/fake-phpcs');
+
+            $result = self::runCommand([
+                $this->php,
+                $this->bin,
+                '--bin=' . $dir . '/fake-phpcs',
+                '--config-pattern=plugins/*, themes/theme-a',
+            ], $dir);
+
+            self::assertSame(0, $result['code']);
+            self::assertStringContainsString('FAKE plugin-a/phpcs.xml.dist', $result['stdout']);
+            self::assertStringContainsString('FAKE theme-a/phpcs.xml.dist', $result['stdout']);
+            self::assertStringNotContainsString('tool-a/phpcs.xml.dist', $result['stdout']);
+        } finally {
+            self::rmrf($dir);
+        }
+    }
+
     public function testCommaSeparatedConfigPatternsAreSupported(): void
     {
         $dir = self::makeTmpDir();

@@ -18,7 +18,7 @@ Run PHPCS for every matched config:
 
 ```bash
 vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
+  --config-pattern='packages/*' \
   --processes=4
 ```
 
@@ -26,7 +26,7 @@ Pass PHPCS options after `--`:
 
 ```bash
 vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
+  --config-pattern='packages/*' \
   --processes=4 \
   -- -s --report=summary
 ```
@@ -35,19 +35,19 @@ Run PHPCBF the same way:
 
 ```bash
 vendor/bin/phpcbf-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
+  --config-pattern='packages/*' \
   --processes=4
 ```
 
-You can repeat `--config-pattern` or provide comma-separated patterns:
+You can repeat `--config-pattern` or provide comma-separated patterns. Patterns may match either project directories or config files:
 
 ```bash
 vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist' \
+  --config-pattern='packages/*' \
   --config-pattern='apps/*/phpcs.xml.dist'
 
 vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*/phpcs.xml.dist,apps/*/phpcs.xml.dist'
+  --config-pattern='packages/*,apps/*/phpcs.xml.dist'
 ```
 
 Each matched config runs as:
@@ -65,15 +65,15 @@ When project directories are provided explicitly, each directory uses the first 
 3. `.phpcs.xml.dist`
 4. `phpcs.xml.dist`
 
-When no project directories are provided, the current working directory is recursively searched for matching config files. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
+When no project directories are provided, the current working directory is recursively searched for matching config files. `--config-pattern` can match either project directory paths or config file paths. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
 
 ## Composer scripts
 
 ```json
 {
   "scripts": {
-    "lint": "phpcs-parallel --config-pattern='packages/*/phpcs.xml.dist' --processes=4 -- -s",
-    "format": "phpcbf-parallel --config-pattern='packages/*/phpcs.xml.dist' --processes=4"
+    "lint": "phpcs-parallel --config-pattern='packages/*' --processes=4 -- -s",
+    "format": "phpcbf-parallel --config-pattern='packages/*' --processes=4"
   }
 }
 ```
