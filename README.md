@@ -85,6 +85,7 @@ Run the same checks used by CI:
 
 ```bash
 composer lint
+composer analyse
 composer test
 ```
 

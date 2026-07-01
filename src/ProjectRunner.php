@@ -32,7 +32,6 @@ final class ProjectRunner
         while ($queue !== [] || $running !== []) {
             while ($queue !== [] && count($running) < $processes) {
                 $project = array_shift($queue);
-                assert($project instanceof Project);
                 $running[] = $this->processFactory->start(
                     $this->commandBuilder->build($binary, $project, $passthrough),
                     $project->rootDir,
