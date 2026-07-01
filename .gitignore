@@ -1,0 +1,3 @@
+/vendor/
+/plan-*.md
+/.phpunit.result.cache
