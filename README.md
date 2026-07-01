@@ -17,37 +17,27 @@ composer require --dev wpelevator/phpcs-parallel
 Run PHPCS for every matched config:
 
 ```bash
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*' \
-  --processes=4
+vendor/bin/phpcs-parallel --config-pattern='packages/*' --processes=4
 ```
 
 Pass PHPCS options after `--`:
 
 ```bash
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*' \
-  --processes=4 \
-  -- -s --report=summary
+vendor/bin/phpcs-parallel --config-pattern='packages/*' --processes=4 -- -s --report=summary
 ```
 
 Run PHPCBF the same way:
 
 ```bash
-vendor/bin/phpcbf-parallel \
-  --config-pattern='packages/*' \
-  --processes=4
+vendor/bin/phpcbf-parallel --config-pattern='packages/*' --processes=4
 ```
 
 You can repeat `--config-pattern` or provide comma-separated patterns. Patterns may match either project directories or config files:
 
 ```bash
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*' \
-  --config-pattern='apps/*/phpcs.xml.dist'
+vendor/bin/phpcs-parallel --config-pattern='packages/*' --config-pattern='apps/*/phpcs.xml.dist'
 
-vendor/bin/phpcs-parallel \
-  --config-pattern='packages/*,apps/*/phpcs.xml.dist'
+vendor/bin/phpcs-parallel --config-pattern='packages/*,apps/*/phpcs.xml.dist'
 ```
 
 Each matched config runs as:
