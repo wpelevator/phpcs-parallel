@@ -1,6 +1,8 @@
 # phpcs-parallel
 
-Run PHPCS/PHPCBF once per project ruleset, optionally in parallel.
+[![Test](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml)
+
+Run [PHPCS](https://github.com/PHPCSStandards/PHP_CodeSniffer/) once per project ruleset, optionally in parallel.
 
 This is useful for monorepos where each package has its own `phpcs.xml.dist`. Instead of merging those rulesets into one PHPCS run, `phpcs-parallel` runs an isolated PHPCS process for each matched config.
 
