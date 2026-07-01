@@ -16,6 +16,9 @@ jobs:
     name: PHP ${{ matrix.php-version }}
     runs-on: ubuntu-latest
 
+    env:
+      COMPOSER_CACHE_DIR: .cache/composer
+
     strategy:
       fail-fast: false
       matrix:
@@ -36,6 +39,13 @@ jobs:
           php-version: ${{ matrix.php-version }}
           coverage: none
           tools: composer:v2
+
+      - name: Setup cache
+        uses: actions/cache@v6
+        with:
+          path: .cache
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-cache-${{ hashFiles('composer.lock', 'phpunit.xml*', 'phpstan.neon*') }}
+          restore-keys: ${{ runner.os }}-php-${{ matrix.php-version }}-cache-
 
       - name: Validate Composer configuration
         run: composer validate --strict
