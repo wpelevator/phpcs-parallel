@@ -32,7 +32,7 @@ Run PHPCBF the same way:
 vendor/bin/phpcbf-parallel --config-pattern='packages/*' --processes=4
 ```
 
-You can repeat `--config-pattern` or provide comma-separated patterns. Patterns may match either project directories or config files:
+You can repeat `--config-pattern` or provide comma-separated patterns. Patterns are shell-style globs matched with PHP `fnmatch()`, not regular expressions. They may match either project directories or config files:
 
 ```bash
 vendor/bin/phpcs-parallel --config-pattern='packages/*' --config-pattern='apps/*/phpcs.xml.dist'
@@ -55,7 +55,7 @@ When project directories are provided explicitly, each directory uses the first 
 3. `.phpcs.xml.dist`
 4. `phpcs.xml.dist`
 
-When no project directories are provided, the current working directory is recursively searched for matching config files. `--config-pattern` can match either project directory paths or config file paths. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
+When no project directories are provided, the current working directory is recursively searched for matching config files. `--config-pattern` can match either project directory paths or config file paths. Patterns use shell-style glob syntax, for example `packages/*` or `apps/*/phpcs.xml.dist`; regex syntax such as `packages/(foo|bar)` or `packages/.+` is not supported. Passing both project directories and `--config-pattern` combines explicit projects with discovered projects and deduplicates them by project root.
 
 ## Composer scripts
 

@@ -222,6 +222,7 @@ final class ApplicationTest extends TestCase
             $result['stdout']
         );
         self::assertStringContainsString('--bin=PATH            Path to the phpcbf binary.', $result['stdout']);
+        self::assertStringContainsString('shell-style glob, not regex', $result['stdout']);
     }
 
     public function testNoDiscoveredConfigsReturnsError(): void
