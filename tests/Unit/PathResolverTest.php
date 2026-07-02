@@ -4,77 +4,54 @@ declare(strict_types=1);
 
 namespace WPElevator\Pharallel\Tests;
 
-use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use WPElevator\Pharallel\PathResolver;
 
 final class PathResolverTest extends TestCase
 {
+    private TempWorkspace $workspace;
+
+    protected function setUp(): void
+    {
+        $this->workspace = new TempWorkspace('pharallel-path');
+    }
+
+    protected function tearDown(): void
+    {
+        $this->workspace->cleanup();
+    }
+
     public function testResolvesSortedDeduplicatedRelativeTasksAndSkipsDependencyDirectories(): void
     {
-        $dir = sys_get_temp_dir() . '/pharallel-path-' . bin2hex(random_bytes(6));
-        mkdir($dir . '/packages/b', 0777, true);
-        mkdir($dir . '/packages/a', 0777, true);
-        mkdir($dir . '/vendor/c', 0777, true);
-        file_put_contents($dir . '/packages/b/phpstan.neon', '');
-        file_put_contents($dir . '/packages/a/phpstan.neon', '');
-        file_put_contents($dir . '/vendor/c/phpstan.neon', '');
+        $this->workspace->writeFile('packages/b/phpstan.neon', '');
+        $this->workspace->writeFile('packages/a/phpstan.neon', '');
+        $this->workspace->writeFile('vendor/c/phpstan.neon', '');
 
-        try {
-            $tasks = (new PathResolver())->resolve([
-                'packages/*/phpstan.neon',
-                'packages/a/phpstan.neon',
-                'vendor/*/phpstan.neon',
-            ], $dir);
+        $tasks = (new PathResolver())->resolve([
+            'packages/*/phpstan.neon',
+            'packages/a/phpstan.neon',
+            'vendor/*/phpstan.neon',
+        ], $this->workspace->dir);
 
-            self::assertSame('packages/a/phpstan.neon', $tasks[0]->path);
-            self::assertSame(0, $tasks[0]->index);
-            self::assertSame('packages/b/phpstan.neon', $tasks[1]->path);
-            self::assertSame(1, $tasks[1]->index);
-            self::assertCount(2, $tasks);
-        } finally {
-            self::rmrf($dir);
-        }
+        self::assertSame('packages/a/phpstan.neon', $tasks[0]->path);
+        self::assertSame(0, $tasks[0]->index);
+        self::assertSame('packages/b/phpstan.neon', $tasks[1]->path);
+        self::assertSame(1, $tasks[1]->index);
+        self::assertCount(2, $tasks);
     }
 
     public function testSingleStarMatchesOneLevelWhileDoubleStarMatchesDeep(): void
     {
-        $dir = sys_get_temp_dir() . '/pharallel-path-' . bin2hex(random_bytes(6));
-        mkdir($dir . '/packages/a/nested', 0777, true);
-        file_put_contents($dir . '/packages/a/phpstan.neon', '');
-        file_put_contents($dir . '/packages/a/nested/phpstan.neon', '');
+        $this->workspace->writeFile('packages/a/phpstan.neon', '');
+        $this->workspace->writeFile('packages/a/nested/phpstan.neon', '');
 
-        try {
-            $shallow = (new PathResolver())->resolve(['packages/*/phpstan.neon'], $dir);
-            self::assertCount(1, $shallow);
-            self::assertSame('packages/a/phpstan.neon', $shallow[0]->path);
+        $shallow = (new PathResolver())->resolve(['packages/*/phpstan.neon'], $this->workspace->dir);
+        self::assertCount(1, $shallow);
+        self::assertSame('packages/a/phpstan.neon', $shallow[0]->path);
 
-            $deep = (new PathResolver())->resolve(['packages/**/phpstan.neon'], $dir);
-            self::assertCount(2, $deep);
-            self::assertSame('packages/a/nested/phpstan.neon', $deep[0]->path);
-            self::assertSame('packages/a/phpstan.neon', $deep[1]->path);
-        } finally {
-            self::rmrf($dir);
-        }
-    }
-
-    private static function rmrf(string $path): void
-    {
-        if (! file_exists($path)) {
-            return;
-        }
-
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST
-        );
-
-        foreach ($iterator as $file) {
-            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
-        }
-
-        rmdir($path);
+        $deep = (new PathResolver())->resolve(['packages/**/phpstan.neon'], $this->workspace->dir);
+        self::assertCount(2, $deep);
+        self::assertSame('packages/a/nested/phpstan.neon', $deep[0]->path);
+        self::assertSame('packages/a/phpstan.neon', $deep[1]->path);
     }
 }

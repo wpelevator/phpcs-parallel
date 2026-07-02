@@ -18,6 +18,11 @@
             "WPElevator\\Pharallel\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "WPElevator\\Pharallel\\Tests\\": "tests/"
+        }
+    },
     "bin": [
         "bin/pharallel"
     ],
