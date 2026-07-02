@@ -149,7 +149,8 @@ PHP);
     /** @param list<string> $command */
     private function runCommand(array $command): array
     {
-        $process = proc_open($command, [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $this->workspace->dir);
+        $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $process = proc_open($command, $descriptors, $pipes, $this->workspace->dir);
         if (! is_resource($process)) {
             throw new RuntimeException('Unable to start command');
         }
