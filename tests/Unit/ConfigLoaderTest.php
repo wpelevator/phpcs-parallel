@@ -44,12 +44,12 @@ PHP);
 
         $config = (new ConfigLoader())->load('pharallel.php', $this->workspace->dir);
 
-        self::assertArrayHasKey('package', $config->filters);
-        self::assertSame(
+        $this->assertArrayHasKey('package', $config->filters);
+        $this->assertSame(
             'foo',
             $config->filters['package']('packages/foo/composer.json', new Task('x', 0), $this->workspace->dir)
         );
-        self::assertSame(PHP_BINARY, $config->variables['php']);
-        self::assertSame(4, $config->defaults['processes']);
+        $this->assertSame(PHP_BINARY, $config->variables['php']);
+        $this->assertSame(4, $config->defaults['processes']);
     }
 }

@@ -15,10 +15,10 @@ final class TemplateRendererTest extends TestCase
         $renderer = new TemplateRenderer();
         $task = new Task('packages/foo/phpstan.neon', 2);
 
-        self::assertSame('packages/foo', $renderer->render('{path | dirname}', $task, '/repo'));
-        self::assertSame('foo', $renderer->render('{path | dirname | basename}', $task, '/repo'));
-        self::assertSame('phpstan', $renderer->render('{path | filename}', $task, '/repo'));
-        self::assertSame('2', $renderer->render('{index}', $task, '/repo'));
+        $this->assertSame('packages/foo', $renderer->render('{path | dirname}', $task, '/repo'));
+        $this->assertSame('foo', $renderer->render('{path | dirname | basename}', $task, '/repo'));
+        $this->assertSame('phpstan', $renderer->render('{path | filename}', $task, '/repo'));
+        $this->assertSame('2', $renderer->render('{index}', $task, '/repo'));
     }
 
     public function testRendersExtraTaskVariables(): void
@@ -26,7 +26,7 @@ final class TemplateRendererTest extends TestCase
         $renderer = new TemplateRenderer();
         $task = new Task('/repo/phpcs.xml.dist', 0, ['root' => '/repo/packages/foo']);
 
-        self::assertSame('/repo/packages/foo', $renderer->render('{root}', $task, '/repo'));
+        $this->assertSame('/repo/packages/foo', $renderer->render('{root}', $task, '/repo'));
     }
 
     public function testRendersConfiguredVariablesAndFilters(): void
@@ -37,7 +37,7 @@ final class TemplateRendererTest extends TestCase
         );
         $task = new Task('packages/foo/composer.json', 0);
 
-        self::assertSame(PHP_BINARY, $renderer->render('{php}', $task, '/repo'));
-        self::assertSame('foo', $renderer->render('{path | package}', $task, '/repo'));
+        $this->assertSame(PHP_BINARY, $renderer->render('{php}', $task, '/repo'));
+        $this->assertSame('foo', $renderer->render('{path | package}', $task, '/repo'));
     }
 }

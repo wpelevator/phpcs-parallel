@@ -41,14 +41,14 @@ final class PharallelApplicationTest extends TestCase
             '--processes=2',
         ]);
 
-        self::assertSame(0, $result['code'], $result['stderr']);
-        self::assertStringContainsString('[a] TOOL packages/a/phpunit.xml.dist', $result['stdout']);
-        self::assertStringContainsString('[b] TOOL packages/b/phpunit.xml.dist', $result['stdout']);
-        self::assertStringContainsString('ARGS --filter|My Test', $result['stdout']);
-        self::assertStringContainsString('CWD a', $result['stdout']);
-        self::assertStringContainsString('CWD b', $result['stdout']);
-        self::assertStringContainsString('Summary:', $result['stderr']);
-        self::assertStringContainsString('2 passed', $result['stderr']);
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('[a] TOOL packages/a/phpunit.xml.dist', $result['stdout']);
+        $this->assertStringContainsString('[b] TOOL packages/b/phpunit.xml.dist', $result['stdout']);
+        $this->assertStringContainsString('ARGS --filter|My Test', $result['stdout']);
+        $this->assertStringContainsString('CWD a', $result['stdout']);
+        $this->assertStringContainsString('CWD b', $result['stdout']);
+        $this->assertStringContainsString('Summary:', $result['stderr']);
+        $this->assertStringContainsString('2 passed', $result['stderr']);
     }
 
     public function testDryRunPrintsRenderedCommandsWithoutExecuting(): void
@@ -64,10 +64,10 @@ final class PharallelApplicationTest extends TestCase
             '--dry-run',
         ]);
 
-        self::assertSame(0, $result['code'], $result['stderr']);
-        self::assertStringContainsString('[a] $ ', $result['stdout']);
-        self::assertStringContainsString('packages/a/phpunit.xml.dist', $result['stdout']);
-        self::assertStringNotContainsString('TOOL', $result['stdout']);
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('[a] $ ', $result['stdout']);
+        $this->assertStringContainsString('packages/a/phpunit.xml.dist', $result['stdout']);
+        $this->assertStringNotContainsString('TOOL', $result['stdout']);
     }
 
     public function testFailFastStopsSchedulingAfterFirstFailure(): void
@@ -90,10 +90,10 @@ PHP);
             '--processes=1',
         ]);
 
-        self::assertSame(2, $result['code'], $result['stderr']);
-        self::assertStringContainsString('RAN packages/a/composer.json', $result['stdout']);
-        self::assertStringNotContainsString('packages/b', $result['stdout']);
-        self::assertStringContainsString('1 failed', $result['stderr']);
+        $this->assertSame(2, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('RAN packages/a/composer.json', $result['stdout']);
+        $this->assertStringNotContainsString('packages/b', $result['stdout']);
+        $this->assertStringContainsString('1 failed', $result['stderr']);
     }
 
     public function testPathIsRenderedRelativeToInvocationCwdEvenWhenCwdIsSet(): void
@@ -109,8 +109,8 @@ PHP);
             '--cwd={path | dirname}',
         ]);
 
-        self::assertSame(0, $result['code'], $result['stderr']);
-        self::assertStringContainsString('TOOL packages/a/config.neon', $result['stdout']);
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('TOOL packages/a/config.neon', $result['stdout']);
     }
 
     public function testConfigProvidesFiltersVariablesAndDefaults(): void
@@ -142,8 +142,8 @@ PHP);
             '--config=pharallel.php',
         ]);
 
-        self::assertSame(0, $result['code'], $result['stderr']);
-        self::assertStringContainsString('[a] TOOL a', $result['stdout']);
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('[a] TOOL a', $result['stdout']);
     }
 
     /** @param list<string> $command */

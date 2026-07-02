@@ -22,7 +22,7 @@ final class CommandTemplateTest extends TestCase
             '/repo'
         );
 
-        self::assertSame([
+        $this->assertSame([
             'phpstan',
             'analyse',
             '--configuration=/repo/packages/foo/phpstan.neon',

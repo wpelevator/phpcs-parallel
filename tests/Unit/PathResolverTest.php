@@ -33,11 +33,11 @@ final class PathResolverTest extends TestCase
             'vendor/*/phpstan.neon',
         ], $this->workspace->dir);
 
-        self::assertSame('packages/a/phpstan.neon', $tasks[0]->path);
-        self::assertSame(0, $tasks[0]->index);
-        self::assertSame('packages/b/phpstan.neon', $tasks[1]->path);
-        self::assertSame(1, $tasks[1]->index);
-        self::assertCount(2, $tasks);
+        $this->assertSame('packages/a/phpstan.neon', $tasks[0]->path);
+        $this->assertSame(0, $tasks[0]->index);
+        $this->assertSame('packages/b/phpstan.neon', $tasks[1]->path);
+        $this->assertSame(1, $tasks[1]->index);
+        $this->assertCount(2, $tasks);
     }
 
     public function testSingleStarMatchesOneLevelWhileDoubleStarMatchesDeep(): void
@@ -46,12 +46,12 @@ final class PathResolverTest extends TestCase
         $this->workspace->writeFile('packages/a/nested/phpstan.neon', '');
 
         $shallow = (new PathResolver())->resolve(['packages/*/phpstan.neon'], $this->workspace->dir);
-        self::assertCount(1, $shallow);
-        self::assertSame('packages/a/phpstan.neon', $shallow[0]->path);
+        $this->assertCount(1, $shallow);
+        $this->assertSame('packages/a/phpstan.neon', $shallow[0]->path);
 
         $deep = (new PathResolver())->resolve(['packages/**/phpstan.neon'], $this->workspace->dir);
-        self::assertCount(2, $deep);
-        self::assertSame('packages/a/nested/phpstan.neon', $deep[0]->path);
-        self::assertSame('packages/a/phpstan.neon', $deep[1]->path);
+        $this->assertCount(2, $deep);
+        $this->assertSame('packages/a/nested/phpstan.neon', $deep[0]->path);
+        $this->assertSame('packages/a/phpstan.neon', $deep[1]->path);
     }
 }
