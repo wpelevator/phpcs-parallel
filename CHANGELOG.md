@@ -4,6 +4,8 @@ Notable changes to this project are documented in this file. The format follows 
 
 ## Unreleased
 
+## 2.0.0 - 2026-07-02
+
 ### Changed
 
 - Renamed the package and executable to `run-parallel`; the Composer package is now `wpelevator/run-parallel`.
