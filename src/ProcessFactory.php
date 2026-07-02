@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\RunParallel;
 
 interface ProcessFactory
 {

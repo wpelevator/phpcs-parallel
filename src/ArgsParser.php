@@ -1,24 +1,21 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\RunParallel;
 
 final class ArgsParser
 {
     /** @param list<string> $args */
     public function parse(array $args): CliOptions
     {
-        $dirs = [];
-        $configPatterns = [];
-        $processes = 1;
-        $bin = null;
+        $pathPatterns = [];
+        $processes = null;
+        $cwdTemplate = null;
+        $labelTemplate = null;
+        $configPath = null;
         $help = false;
-        $passthrough = [];
-
-        $separator = array_search('--', $args, true);
-        if ($separator !== false) {
-            $passthrough = array_slice($args, $separator + 1);
-            $args = array_slice($args, 0, $separator);
-        }
+        $dryRun = false;
+        $failFast = false;
+        $commands = [];
 
         foreach ($args as $arg) {
             if ($arg === '-h' || $arg === '--help') {
@@ -26,13 +23,43 @@ final class ArgsParser
                 continue;
             }
 
-            if (str_starts_with($arg, '--config-pattern=')) {
-                $configPatterns = array_merge($configPatterns, $this->splitCsv(substr($arg, 17)));
+            if ($arg === '--dry-run') {
+                $dryRun = true;
+                continue;
+            }
+
+            if ($arg === '--fail-fast') {
+                $failFast = true;
+                continue;
+            }
+
+            if (str_starts_with($arg, '--path-pattern=')) {
+                $pathPatterns = array_merge($pathPatterns, $this->splitCsv(substr($arg, 15)));
+                continue;
+            }
+
+            if (str_starts_with($arg, '--command=')) {
+                $commands[] = substr($arg, 10);
                 continue;
             }
 
             if (str_starts_with($arg, '--processes=')) {
-                $processes = max(1, (int) substr($arg, 12));
+                $processes = Processes::parse(substr($arg, 12));
+                continue;
+            }
+
+            if (str_starts_with($arg, '--cwd=')) {
+                $cwdTemplate = substr($arg, 6);
+                continue;
+            }
+
+            if (str_starts_with($arg, '--label=')) {
+                $labelTemplate = substr($arg, 8);
+                continue;
+            }
+
+            if (str_starts_with($arg, '--config=')) {
+                $configPath = substr($arg, 9);
                 continue;
             }
 
@@ -40,21 +67,26 @@ final class ArgsParser
                 throw new \InvalidArgumentException('Use --processes=N. Short -p is not supported yet.');
             }
 
-            if (str_starts_with($arg, '--bin=')) {
-                $bin = substr($arg, 6);
-                continue;
-            }
-
             if (str_starts_with($arg, '-')) {
                 throw new \InvalidArgumentException(
-                    'Unknown phpcs-parallel option: ' . $arg . '. Put PHPCS options after --.'
+                    'Unknown run-parallel option: ' . $arg . '. Put command options inside --command.'
                 );
             }
 
-            $dirs[] = $arg;
+            $commands[] = $arg;
         }
 
-        return new CliOptions($dirs, $configPatterns, $processes, $passthrough, $bin, $help);
+        return new CliOptions(
+            $pathPatterns,
+            $processes,
+            $cwdTemplate,
+            $labelTemplate,
+            $configPath,
+            $help,
+            $dryRun,
+            $failFast,
+            $commands
+        );
     }
 
     /** @return list<string> */

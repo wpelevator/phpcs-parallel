@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\PHPCSParallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use WPElevator\PHPCSParallel\ExitCodeAggregator;
+use WPElevator\RunParallel\ExitCodeAggregator;
 
 final class ExitCodeAggregatorTest extends TestCase
 {
     #[DataProvider('exitCodes')]
     public function testAggregatesExitCodes(int $current, int $next, int $expected): void
     {
-        self::assertSame($expected, (new ExitCodeAggregator())->aggregate($current, $next));
+        $this->assertSame($expected, (new ExitCodeAggregator())->aggregate($current, $next));
     }
 
     /** @return iterable<string, array{int, int, int}> */

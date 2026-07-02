@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\RunParallel;
 
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -11,9 +11,10 @@ final class Process
     private string $stdoutBuffer = '';
     private string $stderrBuffer = '';
 
+    /** @param string $prefix Already-rendered output prefix, including any ANSI color codes. */
     public function __construct(
         private readonly SymfonyProcess $process,
-        private readonly string $label,
+        private readonly string $prefix,
         private readonly ConsoleOutputInterface $output,
     ) {
     }
@@ -31,6 +32,11 @@ final class Process
     public function isRunning(): bool
     {
         return $this->process->isRunning();
+    }
+
+    public function stop(): void
+    {
+        $this->process->stop(3);
     }
 
     public function exitCode(): int
@@ -52,7 +58,7 @@ final class Process
         while (($pos = strpos($buffer, "\n")) !== false) {
             $line = substr($buffer, 0, $pos + 1);
             $buffer = substr($buffer, $pos + 1);
-            $output->write('[' . $this->label . '] ' . $line);
+            $output->write($this->prefix . $line, false, OutputInterface::OUTPUT_RAW);
         }
     }
 
@@ -62,7 +68,7 @@ final class Process
             return;
         }
 
-        $output->write('[' . $this->label . '] ' . $buffer . PHP_EOL);
+        $output->write($this->prefix . $buffer . PHP_EOL, false, OutputInterface::OUTPUT_RAW);
         $buffer = '';
     }
 }

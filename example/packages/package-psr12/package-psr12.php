@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCS_Parallel\Example;
+namespace WPElevator\RunParallel\Example;
 
 class PackagePSR12
 {

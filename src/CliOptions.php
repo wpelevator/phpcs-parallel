@@ -1,21 +1,23 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\RunParallel;
 
 final class CliOptions
 {
     /**
-     * @param list<string> $dirs
-     * @param list<string> $configPatterns
-     * @param list<string> $passthrough
+     * @param list<string> $pathPatterns
+     * @param list<string> $commands
      */
     public function __construct(
-        public readonly array $dirs,
-        public readonly array $configPatterns,
-        public readonly int $processes,
-        public readonly array $passthrough,
-        public readonly ?string $bin,
+        public readonly array $pathPatterns,
+        public readonly ?int $processes,
+        public readonly ?string $cwdTemplate,
+        public readonly ?string $labelTemplate,
+        public readonly ?string $configPath,
         public readonly bool $help,
+        public readonly bool $dryRun = false,
+        public readonly bool $failFast = false,
+        public readonly array $commands = [],
     ) {
     }
 }
