@@ -51,6 +51,100 @@ final class PharallelApplicationTest extends TestCase
         $this->assertStringContainsString('2 passed', $result['stderr']);
     }
 
+    public function testRunsCommandOptionsAsIndividualTasks(): void
+    {
+        $tool = $this->writeFakeTool();
+
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--processes=2',
+            '--command=' . $tool . ' one --flag "with space"',
+            '--command=' . $tool . ' two',
+        ]);
+
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('TOOL one', $result['stdout']);
+        $this->assertStringContainsString('ARGS --flag|with space', $result['stdout']);
+        $this->assertStringContainsString('TOOL two', $result['stdout']);
+        $this->assertStringContainsString('2 passed', $result['stderr']);
+    }
+
+    public function testRunsPositionalCommandsAsIndividualTasks(): void
+    {
+        $tool = $this->writeFakeTool();
+
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--processes=2',
+            $tool . ' one',
+            $tool . ' two',
+        ]);
+
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('TOOL one', $result['stdout']);
+        $this->assertStringContainsString('TOOL two', $result['stdout']);
+        $this->assertStringContainsString('2 passed', $result['stderr']);
+    }
+
+    public function testCommandListUsesSlugLabelAndSupportsDryRun(): void
+    {
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--dry-run',
+            '--command=composer lint',
+            '--command=composer test -- --testsuite=Unit',
+        ]);
+
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('[composer-lint] $ composer lint', $result['stdout']);
+        $this->assertStringContainsString('composer test -- --testsuite=Unit', $result['stdout']);
+    }
+
+    public function testPathPatternAllowsExactlyOneCommandTemplate(): void
+    {
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--path-pattern=packages/*/composer.json',
+            '--command=composer lint',
+            '--command=composer test',
+        ]);
+
+        $this->assertSame(3, $result['code']);
+        $this->assertStringContainsString('exactly one command template', $result['stderr']);
+    }
+
+    public function testPathPatternSupportsPositionalCommandTemplate(): void
+    {
+        $this->workspace->writeFile('packages/a/composer.json', '{}');
+        $tool = $this->writeFakeTool();
+
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--path-pattern=packages/*/composer.json',
+            $tool . ' {path}',
+        ]);
+
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('TOOL packages/a/composer.json', $result['stdout']);
+    }
+
+    public function testFailsWithoutAnyCommand(): void
+    {
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--path-pattern=packages/*/composer.json',
+        ]);
+
+        $this->assertSame(3, $result['code']);
+        $this->assertStringContainsString('At least one command is required.', $result['stderr']);
+    }
+
     public function testDryRunPrintsRenderedCommandsWithoutExecuting(): void
     {
         $this->workspace->writeFile('packages/a/phpunit.xml.dist', '<phpunit/>');
@@ -144,6 +238,31 @@ PHP);
 
         $this->assertSame(0, $result['code'], $result['stderr']);
         $this->assertStringContainsString('[a] TOOL a', $result['stdout']);
+    }
+
+    public function testConfigCommandListRunsWithoutPathPatterns(): void
+    {
+        $tool = $this->writeFakeTool();
+        $this->workspace->writeFile('pharallel.php', <<<PHP
+<?php
+
+return [
+    'defaults' => [
+        'command' => ['{$tool} one', '{$tool} two'],
+    ],
+];
+PHP);
+
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--config=pharallel.php',
+        ]);
+
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('TOOL one', $result['stdout']);
+        $this->assertStringContainsString('TOOL two', $result['stdout']);
+        $this->assertStringContainsString('2 passed', $result['stderr']);
     }
 
     /** @param list<string> $command */

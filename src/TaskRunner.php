@@ -29,7 +29,7 @@ final class TaskRunner
      */
     public function run(
         array $tasks,
-        string $commandTemplate,
+        ?string $commandTemplate,
         int $processes,
         string $invocationCwd,
         ?string $cwdTemplate = null,
@@ -116,7 +116,7 @@ final class TaskRunner
     /** @param list<Task> $tasks */
     private function dryRun(
         array $tasks,
-        string $commandTemplate,
+        ?string $commandTemplate,
         string $invocationCwd,
         ?string $cwdTemplate,
         ?string $labelTemplate
@@ -144,12 +144,17 @@ final class TaskRunner
     /** @return array{list<string>, string, string} */
     private function prepare(
         Task $task,
-        string $commandTemplate,
+        ?string $commandTemplate,
         string $invocationCwd,
         ?string $cwdTemplate,
         ?string $labelTemplate
     ): array {
-        $command = $this->commandTemplate->render($commandTemplate, $task, $invocationCwd);
+        $template = $task->command ?? $commandTemplate;
+        if ($template === null) {
+            throw new \InvalidArgumentException('Task has no command: ' . $task->path);
+        }
+
+        $command = $this->commandTemplate->render($template, $task, $invocationCwd);
         $cwd = $cwdTemplate === null
             ? $invocationCwd
             : $this->resolveCwd(

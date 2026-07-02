@@ -4,10 +4,12 @@ namespace WPElevator\Pharallel;
 
 final class CliOptions
 {
-    /** @param list<string> $pathPatterns */
+    /**
+     * @param list<string> $pathPatterns
+     * @param list<string> $commands
+     */
     public function __construct(
         public readonly array $pathPatterns,
-        public readonly ?string $command,
         public readonly ?int $processes,
         public readonly ?string $cwdTemplate,
         public readonly ?string $labelTemplate,
@@ -15,6 +17,7 @@ final class CliOptions
         public readonly bool $help,
         public readonly bool $dryRun = false,
         public readonly bool $failFast = false,
+        public readonly array $commands = [],
     ) {
     }
 }

@@ -2,9 +2,9 @@
 
 [![Test](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml)
 
-Run one command per matched path, optionally in parallel.
+Run a list of commands, or one command per matched path, in parallel.
 
-`pharallel` is useful for PHP monorepos where each package has its own tool config. It discovers paths, renders one command per path, and executes those commands with prefixed output.
+`pharallel` is useful for running Composer scripts concurrently — think `npm-run-all` for PHP — and for monorepos where each package has its own tool config. It discovers paths, renders one command per path, and executes those commands with prefixed output.
 
 ## Install
 
@@ -14,7 +14,18 @@ composer require --dev wpelevator/pharallel
 
 ## Usage
 
-At its simplest, provide a path pattern and a command template:
+At its simplest, pass each command with `--command`:
+
+```bash
+vendor/bin/pharallel \
+  --command='composer lint' \
+  --command='composer test' \
+  --command='composer analyse'
+```
+
+Each command becomes its own task, and tasks run in parallel with prefixed output, a per-task summary, and the highest exit code as the result. Repeat `--command` when you want `npm-run-all` style behaviour. See [Composer scripts](#composer-scripts) for running named scripts concurrently.
+
+For monorepos, provide a path pattern and a command template instead — one task is created per matched path:
 
 ```bash
 vendor/bin/pharallel \
@@ -65,11 +76,12 @@ Options:
 
 | Option | Description |
 | --- | --- |
+| `--command=CMD` | Command to run. Repeatable when no path pattern is provided; with `--path-pattern`, provide exactly one command template. |
+| `COMMAND ...` | Positional shorthand for `--command`. With `--path-pattern`, provide exactly one command. |
 | `--path-pattern=GLOB` | Match paths to create tasks. Repeatable; comma-separated values are supported. |
-| `--command=TEMPLATE` | Command template rendered once per matched path. |
 | `--processes=N` | Number of commands to run at once. Default: `auto` (CPU core count). |
 | `--cwd=TEMPLATE` | Working directory template for each task. Default: invocation directory. |
-| `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`. |
+| `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`, or `{path | slug}` for a command list. |
 | `--config=PATH` | PHP config file for custom filters, variables, and defaults. |
 | `--dry-run` | Print the rendered command per task without executing anything. |
 | `--fail-fast` | Stop scheduling and terminate running tasks after the first failure. |
@@ -97,7 +109,7 @@ vendor/bin/pharallel \
 
 | Variable | Description |
 | --- | --- |
-| `{path}` | Matched path, rendered relative to the invocation directory when possible. |
+| `{path}` | Matched path, rendered relative to the invocation directory when possible. For a command list, the command string itself. |
 | `{index}` | Zero-based task index. |
 
 ### Filters
@@ -122,7 +134,7 @@ Commands are executed directly as argv, not through a shell. Pipes, redirects, a
 
 ### Binary resolution
 
-The first word of `--command` is resolved through the `PATH` environment variable, which child processes inherit from `pharallel`. When `pharallel` runs as a [Composer script](#composer-scripts), Composer prepends the project's `vendor/bin` directory to `PATH` for the duration of the run, so bare binary names like `phpcs` or `phpstan` resolve to the project-local binaries — even when `--cwd` points at a package subdirectory, because the prepended `vendor/bin` path is absolute.
+The first word of each command is resolved through the `PATH` environment variable, which child processes inherit from `pharallel`. When `pharallel` runs as a [Composer script](#composer-scripts), Composer prepends the project's `vendor/bin` directory to `PATH` for the duration of the run, so bare binary names like `phpcs` or `phpstan` resolve to the project-local binaries — even when `--cwd` points at a package subdirectory, because the prepended `vendor/bin` path is absolute.
 
 When invoking `vendor/bin/pharallel` directly from the shell, `PATH` is not modified, so bare names resolve to whatever is installed globally. In that case, reference project-local binaries by path:
 
@@ -179,6 +191,14 @@ CLI options override config defaults, so you can still replace individual values
 vendor/bin/pharallel \
   --config=pharallel.php \
   --command='composer test'
+```
+
+The `command` default also accepts a list, which runs as a command list when no path patterns are configured:
+
+```php
+'defaults' => [
+    'command' => ['composer lint', 'composer test', 'composer analyse'],
+],
 ```
 
 Custom filters receive the current value, the current task, and the invocation working directory:
@@ -253,7 +273,7 @@ vendor/bin/pharallel \
 
 ### Composer
 
-`--command` accepts any Composer invocation, not just `composer test`:
+The command template accepts any Composer invocation, not just `composer test`:
 
 ```bash
 vendor/bin/pharallel \
@@ -283,7 +303,22 @@ vendor/bin/pharallel \
 
 ## Composer scripts
 
-Composer adds `vendor/bin` to `PATH` when running scripts, so both `pharallel` and the binaries referenced in `--command` can use bare names here (see [Binary resolution](#binary-resolution)):
+Run existing Composer scripts in parallel by wrapping them in a `pharallel` script, `npm-run-all` style:
+
+```json
+{
+  "scripts": {
+    "lint": "phpcs",
+    "analyse": "phpstan",
+    "test": "phpunit",
+    "check": "pharallel --command='composer lint' --command='composer analyse' --command='composer test'"
+  }
+}
+```
+
+Now `composer check` runs all three concurrently with prefixed output and a summary, and fails if any of them fail.
+
+Composer adds `vendor/bin` to `PATH` when running scripts, so both `pharallel` and the binaries referenced in commands can use bare names here (see [Binary resolution](#binary-resolution)):
 
 ```json
 {
@@ -322,7 +357,7 @@ Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `te
 ## Why not …?
 
 - **`phpcs --parallel`, PHPStan workers, ParaTest** — these parallelize *within one config*. `pharallel` parallelizes *across configs* (one run per package), and the two compose: each `pharallel` task can itself use the tool's own parallelism.
-- **[veewee/composer-run-parallel](https://github.com/veewee/composer-run-parallel)** — runs named Composer scripts concurrently, but has no path discovery or per-path command templating.
+- **[veewee/composer-run-parallel](https://github.com/veewee/composer-run-parallel)** — runs named Composer scripts concurrently, like `pharallel`'s command-list mode, but has no path discovery or per-path command templating.
 - **[symplify/monorepo-builder](https://github.com/symplify/monorepo-builder)** — manages `composer.json` merging and releases; it is not a task runner.
 - **Turborepo/Nx-class runners** — bring dependency graphs, caching, and affected-detection at the cost of lock-in and configuration. `pharallel` is deliberately the small end of that spectrum: think GNU `parallel` for Composer projects.
 

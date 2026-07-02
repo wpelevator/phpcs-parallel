@@ -9,6 +9,7 @@ final class Task
         public readonly string $path,
         public readonly int $index,
         public readonly array $variables = [],
+        public readonly ?string $command = null,
     ) {
     }
 

@@ -8,7 +8,6 @@ final class ArgsParser
     public function parse(array $args): CliOptions
     {
         $pathPatterns = [];
-        $command = null;
         $processes = null;
         $cwdTemplate = null;
         $labelTemplate = null;
@@ -16,6 +15,7 @@ final class ArgsParser
         $help = false;
         $dryRun = false;
         $failFast = false;
+        $commands = [];
 
         foreach ($args as $arg) {
             if ($arg === '-h' || $arg === '--help') {
@@ -39,7 +39,7 @@ final class ArgsParser
             }
 
             if (str_starts_with($arg, '--command=')) {
-                $command = substr($arg, 10);
+                $commands[] = substr($arg, 10);
                 continue;
             }
 
@@ -73,19 +73,19 @@ final class ArgsParser
                 );
             }
 
-            throw new \InvalidArgumentException('Unexpected argument: ' . $arg . '. Use --path-pattern=GLOB.');
+            $commands[] = $arg;
         }
 
         return new CliOptions(
             $pathPatterns,
-            $command,
             $processes,
             $cwdTemplate,
             $labelTemplate,
             $configPath,
             $help,
             $dryRun,
-            $failFast
+            $failFast,
+            $commands
         );
     }
 

@@ -30,23 +30,42 @@ final class Application
             }
 
             $config = $this->configLoader->load($options->configPath, $cwd);
-            $command = $options->command ?? $this->stringDefault($config, 'command');
-            if ($command === null || $command === '') {
-                throw new \InvalidArgumentException('--command is required.');
-            }
-
-            $pathPatterns = $options->pathPatterns !== []
-                ? $options->pathPatterns
-                : $this->pathPatternDefault($config);
             $processes = $options->processes ?? $this->processesDefault($config);
             $cwdTemplate = $options->cwdTemplate ?? $this->stringDefault($config, 'cwd');
             $labelTemplate = $options->labelTemplate ?? $this->stringDefault($config, 'label');
             $failFast = $options->failFast || $this->boolDefault($config, 'fail-fast');
 
-            $tasks = $this->pathResolver->resolve($pathPatterns, $cwd);
-            if ($tasks === []) {
-                $this->output->getErrorOutput()->write("No paths matched.\n");
-                return 3;
+            $pathPatterns = $options->pathPatterns !== []
+                ? $options->pathPatterns
+                : $this->pathPatternDefault($config);
+            $commands = $options->commands !== []
+                ? $options->commands
+                : $this->commandsDefault($config);
+
+            if ($commands === []) {
+                throw new \InvalidArgumentException('At least one command is required.');
+            }
+
+            if ($pathPatterns !== []) {
+                if (count($commands) > 1) {
+                    throw new \InvalidArgumentException(
+                        'Provide exactly one command template when using --path-pattern.'
+                    );
+                }
+
+                $command = $commands[0];
+                $tasks = $this->pathResolver->resolve($pathPatterns, $cwd);
+                if ($tasks === []) {
+                    $this->output->getErrorOutput()->write("No paths matched.\n");
+                    return 3;
+                }
+            } else {
+                $command = null;
+                $labelTemplate ??= '{path | slug}';
+                $tasks = [];
+                foreach ($commands as $index => $taskCommand) {
+                    $tasks[] = new Task($taskCommand, $index, command: $taskCommand);
+                }
             }
 
             $templateRenderer = new TemplateRenderer($config->filters, $config->variables);
@@ -110,6 +129,33 @@ final class Application
 
         if (! is_scalar($value) && ! $value instanceof \Stringable) {
             throw new \RuntimeException('Config default path-pattern must be scalar, stringable, or an array.');
+        }
+
+        return [(string) $value];
+    }
+
+    /** @return list<string> */
+    private function commandsDefault(PharallelConfig $config): array
+    {
+        if (! array_key_exists('command', $config->defaults)) {
+            return [];
+        }
+
+        $value = $config->defaults['command'];
+        if (is_array($value)) {
+            $commands = [];
+            foreach ($value as $command) {
+                if (! is_scalar($command) && ! $command instanceof \Stringable) {
+                    throw new \RuntimeException('Config default command values must be scalar or stringable.');
+                }
+                $commands[] = (string) $command;
+            }
+
+            return $commands;
+        }
+
+        if (! is_scalar($value) && ! $value instanceof \Stringable) {
+            throw new \RuntimeException('Config default command must be scalar, stringable, or an array.');
         }
 
         return [(string) $value];
