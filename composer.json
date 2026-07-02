@@ -30,6 +30,7 @@
         "bin/run-parallel"
     ],
     "scripts": {
+        "all": "@php bin/run-parallel 'composer lint' 'composer analyse' 'composer test'",
         "lint": "phpcs",
         "format": "phpcbf",
         "analyse": "phpstan analyse",

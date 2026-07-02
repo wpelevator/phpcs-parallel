@@ -370,6 +370,12 @@ composer test:coverage
 
 Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `tests/coverage/html`.
 
+Use the self test to run all checks concurrently:
+
+```bash
+composer all
+```
+
 ## Why not …?
 
 - **`phpcs --parallel`, PHPStan workers, ParaTest** — these parallelize *within one config*. `run-parallel` parallelizes *across configs* (one run per package), and the two compose: each `run-parallel` task can itself use the tool's own parallelism.
