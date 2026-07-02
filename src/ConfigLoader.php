@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
 final class ConfigLoader
 {
@@ -10,7 +10,7 @@ final class ConfigLoader
             return new PharallelConfig();
         }
 
-        $configPath = $this->isAbsolutePath($path) ? $path : $cwd . DIRECTORY_SEPARATOR . $path;
+        $configPath = Path::isAbsolute($path) ? $path : $cwd . DIRECTORY_SEPARATOR . $path;
         if (! is_file($configPath)) {
             throw new \RuntimeException('Config file does not exist: ' . $path);
         }
@@ -104,10 +104,5 @@ final class ConfigLoader
         }
 
         return $loaded;
-    }
-
-    private function isAbsolutePath(string $path): bool
-    {
-        return str_starts_with($path, '/') || (bool) preg_match('#^[A-Za-z]:[\\\\/]#', $path);
     }
 }

@@ -1,18 +1,18 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 
-final class GenericApplication
+final class Application
 {
     public function __construct(
-        private readonly GenericArgsParser $argsParser,
+        private readonly ArgsParser $argsParser,
         private readonly PathResolver $pathResolver,
         private readonly ConfigLoader $configLoader,
         private readonly ProcessFactory $processFactory,
         private readonly ExitCodeAggregator $exitCodeAggregator,
-        private readonly GenericHelpFormatter $helpFormatter,
+        private readonly HelpFormatter $helpFormatter,
         private readonly ConsoleOutputInterface $output,
     ) {
     }
@@ -38,9 +38,10 @@ final class GenericApplication
             $pathPatterns = $options->pathPatterns !== []
                 ? $options->pathPatterns
                 : $this->pathPatternDefault($config);
-            $processes = $options->processes ?? $this->intDefault($config, 'processes', 1);
+            $processes = $options->processes ?? $this->processesDefault($config);
             $cwdTemplate = $options->cwdTemplate ?? $this->stringDefault($config, 'cwd');
             $labelTemplate = $options->labelTemplate ?? $this->stringDefault($config, 'label');
+            $failFast = $options->failFast || $this->boolDefault($config, 'fail-fast');
 
             $tasks = $this->pathResolver->resolve($pathPatterns, $cwd);
             if ($tasks === []) {
@@ -53,7 +54,8 @@ final class GenericApplication
                 $this->processFactory,
                 new CommandTemplate($templateRenderer),
                 $templateRenderer,
-                $this->exitCodeAggregator
+                $this->exitCodeAggregator,
+                $this->output
             );
 
             return $taskRunner->run(
@@ -62,7 +64,9 @@ final class GenericApplication
                 $processes,
                 $cwd,
                 $cwdTemplate,
-                $labelTemplate
+                $labelTemplate,
+                $options->dryRun,
+                $failFast
             );
         } catch (\Throwable $e) {
             $this->output->getErrorOutput()->write($e->getMessage() . PHP_EOL);
@@ -111,17 +115,24 @@ final class GenericApplication
         return [(string) $value];
     }
 
-    private function intDefault(PharallelConfig $config, string $name, int $fallback): int
+    private function processesDefault(PharallelConfig $config): int
+    {
+        $value = $this->stringDefault($config, 'processes');
+
+        return $value === null ? CpuCount::detect() : Processes::parse($value);
+    }
+
+    private function boolDefault(PharallelConfig $config, string $name): bool
     {
         if (! array_key_exists($name, $config->defaults)) {
-            return $fallback;
+            return false;
         }
 
         $value = $config->defaults[$name];
-        if (! is_scalar($value) && ! $value instanceof \Stringable) {
-            throw new \RuntimeException('Config default must be scalar or stringable: ' . $name);
+        if (! is_bool($value)) {
+            throw new \RuntimeException('Config default must be a boolean: ' . $name);
         }
 
-        return max(1, (int) (string) $value);
+        return $value;
     }
 }

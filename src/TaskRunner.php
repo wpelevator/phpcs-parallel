@@ -1,6 +1,9 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
+
+use Symfony\Component\Console\Formatter\OutputFormatter;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 
 final class TaskRunner
 {
@@ -13,6 +16,7 @@ final class TaskRunner
         private readonly CommandTemplate $commandTemplate,
         private readonly TemplateRenderer $templateRenderer,
         private readonly ExitCodeAggregator $exitCodeAggregator,
+        private readonly ConsoleOutputInterface $output,
         ?callable $sleep = null,
     ) {
         $this->sleep = $sleep ?? static function (int $microseconds): void {
@@ -30,44 +34,207 @@ final class TaskRunner
         string $invocationCwd,
         ?string $cwdTemplate = null,
         ?string $labelTemplate = null,
+        bool $dryRun = false,
+        bool $failFast = false,
     ): int {
+        if ($dryRun) {
+            return $this->dryRun($tasks, $commandTemplate, $invocationCwd, $cwdTemplate, $labelTemplate);
+        }
+
         $queue = $tasks;
+        /** @var list<array{process: Process, label: string, start: float}> $running */
         $running = [];
+        /** @var list<TaskResult> $results */
+        $results = [];
         $exitCode = 0;
+        $interrupted = false;
+        $restoreSignals = $this->trapSignals($interrupted);
+        $runStart = microtime(true);
 
         while ($queue !== [] || $running !== []) {
-            while ($queue !== [] && count($running) < $processes) {
+            while (! $interrupted && $queue !== [] && count($running) < $processes) {
                 $task = array_shift($queue);
-                $command = $this->commandTemplate->render($commandTemplate, $task, $invocationCwd);
-                $cwd = $cwdTemplate === null
-                    ? $invocationCwd
-                    : $this->resolveCwd(
-                        $this->templateRenderer->render($cwdTemplate, $task, $invocationCwd),
-                        $invocationCwd
-                    );
-                $label = $labelTemplate === null
-                    ? $this->templateRenderer->render('{path | dirname | basename}', $task, $invocationCwd)
-                    : $this->templateRenderer->render($labelTemplate, $task, $invocationCwd);
+                [$command, $cwd, $label] = $this->prepare(
+                    $task,
+                    $commandTemplate,
+                    $invocationCwd,
+                    $cwdTemplate,
+                    $labelTemplate
+                );
 
-                $running[] = $this->processFactory->start($command, $cwd, $label);
+                $running[] = [
+                    'process' => $this->processFactory->start($command, $cwd, $label),
+                    'label' => $label,
+                    'start' => microtime(true),
+                ];
             }
 
-            foreach ($running as $index => $process) {
-                $process->pump();
-                if (! $process->isRunning()) {
-                    $process->pump();
-                    $exitCode = $this->exitCodeAggregator->aggregate($exitCode, $process->exitCode());
+            $stopRemaining = $interrupted;
+            foreach ($running as $index => $entry) {
+                $entry['process']->pump();
+                if (! $entry['process']->isRunning()) {
+                    $taskExitCode = $entry['process']->exitCode();
+                    $results[] = new TaskResult($entry['label'], $taskExitCode, microtime(true) - $entry['start']);
+                    $exitCode = $this->exitCodeAggregator->aggregate($exitCode, $taskExitCode);
                     unset($running[$index]);
+
+                    if ($failFast && $taskExitCode !== 0) {
+                        $stopRemaining = true;
+                    }
                 }
             }
 
             $running = array_values($running);
+
+            if ($stopRemaining) {
+                $queue = [];
+                foreach ($running as $entry) {
+                    $entry['process']->stop();
+                    $entry['process']->exitCode();
+                    $results[] = new TaskResult($entry['label'], 0, microtime(true) - $entry['start'], true);
+                }
+                $running = [];
+            }
+
             if ($running !== []) {
                 ($this->sleep)(10000);
             }
         }
 
+        $restoreSignals();
+
+        if ($interrupted) {
+            $this->output->getErrorOutput()->write('Interrupted.' . PHP_EOL);
+            $exitCode = max($exitCode, 130);
+        }
+
+        $this->writeSummary($results, microtime(true) - $runStart);
+
         return $exitCode;
+    }
+
+    /** @param list<Task> $tasks */
+    private function dryRun(
+        array $tasks,
+        string $commandTemplate,
+        string $invocationCwd,
+        ?string $cwdTemplate,
+        ?string $labelTemplate
+    ): int {
+        foreach ($tasks as $task) {
+            [$command, $cwd, $label] = $this->prepare(
+                $task,
+                $commandTemplate,
+                $invocationCwd,
+                $cwdTemplate,
+                $labelTemplate
+            );
+
+            $line = '[' . $label . '] $ ' . CommandFormatter::format($command);
+            if ($cwd !== $invocationCwd) {
+                $line .= ' (cwd: ' . $cwd . ')';
+            }
+
+            $this->output->writeln(OutputFormatter::escape($line));
+        }
+
+        return 0;
+    }
+
+    /** @return array{list<string>, string, string} */
+    private function prepare(
+        Task $task,
+        string $commandTemplate,
+        string $invocationCwd,
+        ?string $cwdTemplate,
+        ?string $labelTemplate
+    ): array {
+        $command = $this->commandTemplate->render($commandTemplate, $task, $invocationCwd);
+        $cwd = $cwdTemplate === null
+            ? $invocationCwd
+            : $this->resolveCwd(
+                $this->templateRenderer->render($cwdTemplate, $task, $invocationCwd),
+                $invocationCwd
+            );
+        $label = $this->templateRenderer->render(
+            $labelTemplate ?? '{path | dirname | basename}',
+            $task,
+            $invocationCwd
+        );
+
+        return [$command, $cwd, $label];
+    }
+
+    /** @param list<TaskResult> $results */
+    private function writeSummary(array $results, float $elapsed): void
+    {
+        if ($results === []) {
+            return;
+        }
+
+        $output = $this->output->getErrorOutput();
+        $failed = 0;
+        $stopped = 0;
+
+        $output->writeln('');
+        $output->writeln('Summary:');
+
+        foreach ($results as $result) {
+            $label = OutputFormatter::escape($result->label);
+            $duration = self::formatDuration($result->duration);
+
+            if ($result->stopped) {
+                $stopped++;
+                $output->writeln(sprintf('  <fg=yellow>- %s (stopped after %s)</>', $label, $duration));
+            } elseif ($result->exitCode === 0) {
+                $output->writeln(sprintf('  <fg=green>✓ %s (%s)</>', $label, $duration));
+            } else {
+                $failed++;
+                $output->writeln(sprintf('  <fg=red>✗ %s (%s, exit %d)</>', $label, $duration, $result->exitCode));
+            }
+        }
+
+        $counts = sprintf('%d passed', count($results) - $failed - $stopped);
+        if ($failed > 0) {
+            $counts .= sprintf(', %d failed', $failed);
+        }
+        if ($stopped > 0) {
+            $counts .= sprintf(', %d stopped', $stopped);
+        }
+
+        $output->writeln(sprintf('%s (%s)', $counts, self::formatDuration($elapsed)));
+    }
+
+    private static function formatDuration(float $seconds): string
+    {
+        if ($seconds >= 60) {
+            return sprintf('%dm %ds', intdiv((int) $seconds, 60), (int) $seconds % 60);
+        }
+
+        return sprintf('%.1fs', $seconds);
+    }
+
+    /** @return callable(): void */
+    private function trapSignals(bool &$interrupted): callable
+    {
+        if (! function_exists('pcntl_signal') || ! function_exists('pcntl_async_signals')) {
+            return static function (): void {
+            };
+        }
+
+        $wasAsync = pcntl_async_signals();
+        pcntl_async_signals(true);
+        $handler = static function () use (&$interrupted): void {
+            $interrupted = true;
+        };
+        pcntl_signal(SIGINT, $handler);
+        pcntl_signal(SIGTERM, $handler);
+
+        return static function () use ($wasAsync): void {
+            pcntl_signal(SIGINT, SIG_DFL);
+            pcntl_signal(SIGTERM, SIG_DFL);
+            pcntl_async_signals($wasAsync);
+        };
     }
 
     private function resolveCwd(string $cwd, string $invocationCwd): string
@@ -76,17 +243,12 @@ final class TaskRunner
             throw new \InvalidArgumentException('Rendered --cwd is empty.');
         }
 
-        $path = $this->isAbsolutePath($cwd) ? $cwd : $invocationCwd . DIRECTORY_SEPARATOR . $cwd;
+        $path = Path::isAbsolute($cwd) ? $cwd : $invocationCwd . DIRECTORY_SEPARATOR . $cwd;
         $real = realpath($path);
         if ($real === false || ! is_dir($real)) {
             throw new \RuntimeException('Rendered --cwd is not a directory: ' . $cwd);
         }
 
         return $real;
-    }
-
-    private function isAbsolutePath(string $path): bool
-    {
-        return str_starts_with($path, '/') || (bool) preg_match('#^[A-Za-z]:[\\\\/]#', $path);
     }
 }

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\PHPCSParallel\Tests;
+namespace WPElevator\Pharallel\Tests;
 
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use WPElevator\PHPCSParallel\ConfigLoader;
-use WPElevator\PHPCSParallel\Task;
+use WPElevator\Pharallel\ConfigLoader;
+use WPElevator\Pharallel\Task;
 
 final class ConfigLoaderTest extends TestCase
 {

@@ -22,7 +22,7 @@ vendor/bin/pharallel \
   --command='phpstan analyse --configuration={path} {path | dirname}'
 ```
 
-Run tasks in parallel with `--processes`:
+Tasks run in parallel by default, one process per CPU core. Use `--processes` to control the concurrency (`--processes=1` runs serially):
 
 ```bash
 vendor/bin/pharallel \
@@ -67,10 +67,31 @@ Options:
 | --- | --- |
 | `--path-pattern=GLOB` | Match paths to create tasks. Repeatable; comma-separated values are supported. |
 | `--command=TEMPLATE` | Command template rendered once per matched path. |
-| `--processes=N` | Number of commands to run at once. Default: `1`. |
+| `--processes=N` | Number of commands to run at once. Default: `auto` (CPU core count). |
 | `--cwd=TEMPLATE` | Working directory template for each task. Default: invocation directory. |
 | `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`. |
 | `--config=PATH` | PHP config file for custom filters, variables, and defaults. |
+| `--dry-run` | Print the rendered command per task without executing anything. |
+| `--fail-fast` | Stop scheduling and terminate running tasks after the first failure. |
+
+### Path patterns
+
+Patterns use glob semantics: `*` and `?` match within a single path segment and never cross `/`, while `**` matches any number of segments. Character classes like `[0-9]` and `[!0-9]` are supported.
+
+| Pattern | Matches | Does not match |
+| --- | --- | --- |
+| `packages/*/phpcs.xml` | `packages/foo/phpcs.xml` | `packages/foo/bar/phpcs.xml` |
+| `packages/**/phpcs.xml` | `packages/phpcs.xml`, `packages/foo/bar/phpcs.xml` | `src/phpcs.xml` |
+| `**/composer.json` | `composer.json` at any depth | — |
+
+Use `--dry-run` to preview which paths matched and what will run:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpcs.xml.dist' \
+  --command='phpcs --standard={path} {path | dirname}' \
+  --dry-run
+```
 
 ### Template variables
 
@@ -140,7 +161,8 @@ return [
         'command' => '{php} vendor/bin/phpunit',
         'cwd' => '{path | dirname}',
         'label' => '{path | package}',
-        'processes' => 4,
+        'processes' => 'auto',
+        'fail-fast' => true,
     ],
 ];
 ```
@@ -163,7 +185,7 @@ Custom filters receive the current value, the current task, and the invocation w
 
 ```php
 'filters' => [
-    'artifactName' => static function (string $value, \WPElevator\PHPCSParallel\Task $task, string $cwd): string {
+    'artifactName' => static function (string $value, \WPElevator\Pharallel\Task $task, string $cwd): string {
         return $task->index . '-' . basename(dirname($value));
     },
 ],
@@ -297,11 +319,20 @@ composer test:coverage
 
 Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `tests/coverage/html`.
 
+## Why not …?
+
+- **`phpcs --parallel`, PHPStan workers, ParaTest** — these parallelize *within one config*. `pharallel` parallelizes *across configs* (one run per package), and the two compose: each `pharallel` task can itself use the tool's own parallelism.
+- **[veewee/composer-run-parallel](https://github.com/veewee/composer-run-parallel)** — runs named Composer scripts concurrently, but has no path discovery or per-path command templating.
+- **[symplify/monorepo-builder](https://github.com/symplify/monorepo-builder)** — manages `composer.json` merging and releases; it is not a task runner.
+- **Turborepo/Nx-class runners** — bring dependency graphs, caching, and affected-detection at the cost of lock-in and configuration. `pharallel` is deliberately the small end of that spectrum: think GNU `parallel` for Composer projects.
+
 ## Notes
 
 - Dependency directories are skipped during discovery: `.git`, `vendor`, `node_modules`, `bower_components`.
-- Child process output is streamed through Symfony Console and prefixed with the task label.
+- Child process output is streamed through Symfony Console and prefixed with the task label; labels are colored when the output is a terminal.
+- A per-task summary with durations and exit codes is written to stderr after the run.
 - The command returns the highest child exit code for normal tool failures. Runtime/tooling errors are promoted to at least exit code `3`.
+- On `SIGINT`/`SIGTERM` (e.g. Ctrl+C), running child processes are stopped before exiting (requires the `pcntl` extension; standard on Linux/macOS CLI builds).
 - File-modifying tools are safe only when matched paths do not overlap.
 
 ## License

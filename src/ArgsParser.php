@@ -1,11 +1,11 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
-final class GenericArgsParser
+final class ArgsParser
 {
     /** @param list<string> $args */
-    public function parse(array $args): GenericCliOptions
+    public function parse(array $args): CliOptions
     {
         $pathPatterns = [];
         $command = null;
@@ -14,10 +14,22 @@ final class GenericArgsParser
         $labelTemplate = null;
         $configPath = null;
         $help = false;
+        $dryRun = false;
+        $failFast = false;
 
         foreach ($args as $arg) {
             if ($arg === '-h' || $arg === '--help') {
                 $help = true;
+                continue;
+            }
+
+            if ($arg === '--dry-run') {
+                $dryRun = true;
+                continue;
+            }
+
+            if ($arg === '--fail-fast') {
+                $failFast = true;
                 continue;
             }
 
@@ -32,7 +44,7 @@ final class GenericArgsParser
             }
 
             if (str_starts_with($arg, '--processes=')) {
-                $processes = max(1, (int) substr($arg, 12));
+                $processes = Processes::parse(substr($arg, 12));
                 continue;
             }
 
@@ -64,14 +76,16 @@ final class GenericArgsParser
             throw new \InvalidArgumentException('Unexpected argument: ' . $arg . '. Use --path-pattern=GLOB.');
         }
 
-        return new GenericCliOptions(
+        return new CliOptions(
             $pathPatterns,
             $command,
             $processes,
             $cwdTemplate,
             $labelTemplate,
             $configPath,
-            $help
+            $help,
+            $dryRun,
+            $failFast
         );
     }
 

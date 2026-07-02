@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-4": {
-            "WPElevator\\PHPCSParallel\\": "src/"
+            "WPElevator\\Pharallel\\": "src/"
         }
     },
     "bin": [

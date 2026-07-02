@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\PHPCSParallel\Tests;
+namespace WPElevator\Pharallel\Tests;
 
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
@@ -50,6 +50,69 @@ final class PharallelApplicationTest extends TestCase
             self::assertStringContainsString('ARGS --filter|My Test', $result['stdout']);
             self::assertStringContainsString('CWD a', $result['stdout']);
             self::assertStringContainsString('CWD b', $result['stdout']);
+            self::assertStringContainsString('Summary:', $result['stderr']);
+            self::assertStringContainsString('2 passed', $result['stderr']);
+        } finally {
+            self::rmrf($dir);
+        }
+    }
+
+    public function testDryRunPrintsRenderedCommandsWithoutExecuting(): void
+    {
+        $dir = self::makeTmpDir();
+
+        try {
+            mkdir($dir . '/packages/a', 0777, true);
+            file_put_contents($dir . '/packages/a/phpunit.xml.dist', '<phpunit/>');
+            self::writeFakeTool($dir . '/fake-tool');
+
+            $result = self::runCommand([
+                $this->php,
+                $this->bin,
+                '--path-pattern=packages/*/phpunit.xml.dist',
+                '--command=' . $dir . '/fake-tool {path}',
+                '--dry-run',
+            ], $dir);
+
+            self::assertSame(0, $result['code'], $result['stderr']);
+            self::assertStringContainsString('[a] $ ', $result['stdout']);
+            self::assertStringContainsString('packages/a/phpunit.xml.dist', $result['stdout']);
+            self::assertStringNotContainsString('TOOL', $result['stdout']);
+        } finally {
+            self::rmrf($dir);
+        }
+    }
+
+    public function testFailFastStopsSchedulingAfterFirstFailure(): void
+    {
+        $dir = self::makeTmpDir();
+
+        try {
+            mkdir($dir . '/packages/a', 0777, true);
+            mkdir($dir . '/packages/b', 0777, true);
+            file_put_contents($dir . '/packages/a/composer.json', '{}');
+            file_put_contents($dir . '/packages/b/composer.json', '{}');
+            file_put_contents($dir . '/failing-tool', <<<'PHP'
+#!/usr/bin/env php
+<?php
+echo 'RAN ' . ($argv[1] ?? '') . "\n";
+exit(2);
+PHP);
+            chmod($dir . '/failing-tool', 0755);
+
+            $result = self::runCommand([
+                $this->php,
+                $this->bin,
+                '--path-pattern=packages/*/composer.json',
+                '--command=' . $dir . '/failing-tool {path}',
+                '--fail-fast',
+                '--processes=1',
+            ], $dir);
+
+            self::assertSame(2, $result['code'], $result['stderr']);
+            self::assertStringContainsString('RAN packages/a/composer.json', $result['stdout']);
+            self::assertStringNotContainsString('packages/b', $result['stdout']);
+            self::assertStringContainsString('1 failed', $result['stderr']);
         } finally {
             self::rmrf($dir);
         }

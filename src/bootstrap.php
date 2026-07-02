@@ -14,7 +14,7 @@ foreach ($autoloads as $autoload) {
 }
 
 spl_autoload_register(static function (string $class): void {
-    $prefix = 'WPElevator\\PHPCSParallel\\';
+    $prefix = 'WPElevator\\Pharallel\\';
     if (! str_starts_with($class, $prefix)) {
         return;
     }

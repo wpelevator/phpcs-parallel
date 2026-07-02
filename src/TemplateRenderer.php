@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
 final class TemplateRenderer
 {
@@ -65,7 +65,7 @@ final class TemplateRenderer
 
     private function realpathFilter(string $value, string $invocationCwd): string
     {
-        $candidate = $this->isAbsolutePath($value) ? $value : $invocationCwd . DIRECTORY_SEPARATOR . $value;
+        $candidate = Path::isAbsolute($value) ? $value : $invocationCwd . DIRECTORY_SEPARATOR . $value;
         $real = realpath($candidate);
 
         return $real !== false ? $real : $candidate;
@@ -89,10 +89,5 @@ final class TemplateRenderer
     {
         $slug = preg_replace('/[^A-Za-z0-9._-]+/', '-', $value) ?? $value;
         return trim($slug, '-');
-    }
-
-    private function isAbsolutePath(string $path): bool
-    {
-        return str_starts_with($path, '/') || (bool) preg_match('#^[A-Za-z]:[\\\\/]#', $path);
     }
 }

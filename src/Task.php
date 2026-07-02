@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
 final class Task
 {

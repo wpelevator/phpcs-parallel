@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\PHPCSParallel\Tests;
+namespace WPElevator\Pharallel\Tests;
 
 use FilesystemIterator;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use WPElevator\PHPCSParallel\PathResolver;
+use WPElevator\Pharallel\PathResolver;
 
 final class PathResolverTest extends TestCase
 {
@@ -34,6 +34,27 @@ final class PathResolverTest extends TestCase
             self::assertSame('packages/b/phpstan.neon', $tasks[1]->path);
             self::assertSame(1, $tasks[1]->index);
             self::assertCount(2, $tasks);
+        } finally {
+            self::rmrf($dir);
+        }
+    }
+
+    public function testSingleStarMatchesOneLevelWhileDoubleStarMatchesDeep(): void
+    {
+        $dir = sys_get_temp_dir() . '/pharallel-path-' . bin2hex(random_bytes(6));
+        mkdir($dir . '/packages/a/nested', 0777, true);
+        file_put_contents($dir . '/packages/a/phpstan.neon', '');
+        file_put_contents($dir . '/packages/a/nested/phpstan.neon', '');
+
+        try {
+            $shallow = (new PathResolver())->resolve(['packages/*/phpstan.neon'], $dir);
+            self::assertCount(1, $shallow);
+            self::assertSame('packages/a/phpstan.neon', $shallow[0]->path);
+
+            $deep = (new PathResolver())->resolve(['packages/**/phpstan.neon'], $dir);
+            self::assertCount(2, $deep);
+            self::assertSame('packages/a/nested/phpstan.neon', $deep[0]->path);
+            self::assertSame('packages/a/phpstan.neon', $deep[1]->path);
         } finally {
             self::rmrf($dir);
         }

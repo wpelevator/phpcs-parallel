@@ -1,8 +1,8 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
-final class GenericHelpFormatter
+final class HelpFormatter
 {
     public function format(): string
     {
@@ -14,11 +14,14 @@ Usage:
 
 Options:
   --path-pattern=GLOB  Match paths to create tasks. Repeatable; comma-separated values are supported.
+                       `*` and `?` never match `/`; use `**` to match across directories.
   --command=TEMPLATE   Command template rendered once per matched path.
-  --processes=N        Number of commands to run at once. Default: 1.
+  --processes=N        Number of commands to run at once. Default: auto (CPU core count).
   --cwd=TEMPLATE       Working directory template for each task. Default: invocation directory.
   --label=TEMPLATE     Output label template for each task. Default: {path | dirname | basename}.
   --config=PATH        PHP config file for custom filters, variables, and defaults.
+  --dry-run            Print the rendered command per task without executing anything.
+  --fail-fast          Stop scheduling and terminate running tasks after the first failure.
   -h, --help           Show this help.
 
 Template variables:

@@ -1,22 +1,22 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 final class ApplicationFactory
 {
-    public function create(): GenericApplication
+    public function create(): Application
     {
         $output = new ConsoleOutput();
 
-        return new GenericApplication(
-            new GenericArgsParser(),
+        return new Application(
+            new ArgsParser(),
             new PathResolver(),
             new ConfigLoader(),
             new SymfonyProcessFactory($output),
             new ExitCodeAggregator(),
-            new GenericHelpFormatter(),
+            new HelpFormatter(),
             $output
         );
     }

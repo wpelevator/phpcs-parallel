@@ -1,8 +1,8 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
-final class GenericCliOptions
+final class CliOptions
 {
     /** @param list<string> $pathPatterns */
     public function __construct(
@@ -13,6 +13,8 @@ final class GenericCliOptions
         public readonly ?string $labelTemplate,
         public readonly ?string $configPath,
         public readonly bool $help,
+        public readonly bool $dryRun = false,
+        public readonly bool $failFast = false,
     ) {
     }
 }

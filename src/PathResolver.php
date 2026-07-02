@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\PHPCSParallel;
+namespace WPElevator\Pharallel;
 
 final class PathResolver
 {
@@ -49,12 +49,14 @@ final class PathResolver
     {
         $matches = [];
         $normalizedPattern = rtrim(str_replace('\\', '/', $pattern), '/');
+        $regex = Glob::toRegex($normalizedPattern);
+        $matchAbsolute = Path::isAbsolute($normalizedPattern);
 
         foreach ($this->candidatePaths($root) as $path) {
             $normalizedPath = str_replace('\\', '/', $path);
-            $relativePath = $this->relativeToCwd($normalizedPath, $root);
+            $subject = $matchAbsolute ? $normalizedPath : $this->relativeToCwd($normalizedPath, $root);
 
-            if (fnmatch($normalizedPattern, $relativePath) || fnmatch($normalizedPattern, $normalizedPath)) {
+            if (preg_match($regex, $subject) === 1) {
                 $matches[] = $path;
             }
         }
