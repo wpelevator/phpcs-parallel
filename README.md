@@ -82,6 +82,22 @@ Template variables and filters:
 
 Commands are executed directly as argv, not through a shell. Pipes, redirects, and shell expansion are not interpreted.
 
+### Binary resolution
+
+The first word of `--command` is resolved through the `PATH` environment variable, which child processes inherit from `pharallel`. When `pharallel` runs as a [Composer script](#composer-scripts), Composer prepends the project's `vendor/bin` directory to `PATH` for the duration of the run, so bare binary names like `phpcs` or `phpstan` resolve to the project-local binaries — even when `--cwd` points at a package subdirectory, because the prepended `vendor/bin` path is absolute.
+
+When invoking `vendor/bin/pharallel` directly from the shell, `PATH` is not modified, so bare names resolve to whatever is installed globally. In that case, reference project-local binaries by path:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/phpcs.xml.dist' \
+  --command='vendor/bin/phpcs --standard={path} {path | dirname}'
+```
+
+### Working directory
+
+By default, every command runs in the directory where `pharallel` was invoked. Use `--cwd` to run each command from a different directory — typically the matched package directory via `--cwd='{path | dirname}'`. The template is rendered once per task, and a relative result is resolved against the invocation directory.
+
 `--cwd` changes the child process working directory, but template variables are still rendered relative to the original invocation directory. Use `{path | realpath}` when the child process needs an absolute path.
 
 ## Configuration
@@ -196,17 +212,39 @@ vendor/bin/pharallel \
   --processes=4
 ```
 
-### Composer scripts
+### Composer
+
+`--command` accepts any Composer invocation, not just `composer test`:
 
 ```bash
 vendor/bin/pharallel \
   --path-pattern='packages/*/composer.json' \
-  --command='composer test' \
+  --command='composer validate' \
+  --cwd='{path | dirname}' \
+  --processes=4
+```
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/composer.json' \
+  --command='composer install --no-interaction' \
+  --cwd='{path | dirname}' \
+  --processes=4
+```
+
+Run a named Composer script the same way:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/composer.json' \
+  --command='composer run-script lint' \
   --cwd='{path | dirname}' \
   --processes=4
 ```
 
 ## Composer scripts
+
+Composer adds `vendor/bin` to `PATH` when running scripts, so both `pharallel` and the binaries referenced in `--command` can use bare names here (see [Binary resolution](#binary-resolution)):
 
 ```json
 {
