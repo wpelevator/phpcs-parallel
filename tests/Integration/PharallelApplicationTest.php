@@ -103,18 +103,37 @@ final class PharallelApplicationTest extends TestCase
         $this->assertStringContainsString('composer test -- --testsuite=Unit', $result['stdout']);
     }
 
-    public function testPathPatternAllowsExactlyOneCommandTemplate(): void
+    public function testPathPatternRunsEachCommandForEachMatchWithDistinctDefaultLabels(): void
     {
+        $this->workspace->writeFile('packages/a/composer.json', '{}');
+        $this->workspace->writeFile('packages/b/composer.json', '{}');
+
         $result = $this->runCommand([
             $this->php,
             $this->bin,
+            '--dry-run',
             '--path-pattern=packages/*/composer.json',
-            '--command=composer lint',
-            '--command=composer test',
+            '--command=composer validate {path}',
+            '--command=composer test {path | dirname}',
         ]);
 
-        $this->assertSame(3, $result['code']);
-        $this->assertStringContainsString('exactly one command template', $result['stderr']);
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString(
+            '[a:composer-validate-path] $ composer validate packages/a/composer.json',
+            $result['stdout']
+        );
+        $this->assertStringContainsString(
+            '[a:composer-test-path-dirname] $ composer test packages/a',
+            $result['stdout']
+        );
+        $this->assertStringContainsString(
+            '[b:composer-validate-path] $ composer validate packages/b/composer.json',
+            $result['stdout']
+        );
+        $this->assertStringContainsString(
+            '[b:composer-test-path-dirname] $ composer test packages/b',
+            $result['stdout']
+        );
     }
 
     public function testPathPatternSupportsPositionalCommandTemplate(): void

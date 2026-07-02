@@ -47,17 +47,22 @@ final class Application
             }
 
             if ($pathPatterns !== []) {
-                if (count($commands) > 1) {
-                    throw new \InvalidArgumentException(
-                        'Provide exactly one command template when using --path-pattern.'
-                    );
-                }
-
-                $command = $commands[0];
-                $tasks = $this->pathResolver->resolve($pathPatterns, $cwd);
-                if ($tasks === []) {
+                $command = null;
+                $matchedTasks = $this->pathResolver->resolve($pathPatterns, $cwd);
+                if ($matchedTasks === []) {
                     $this->output->getErrorOutput()->write("No paths matched.\n");
                     return 3;
+                }
+
+                $labelTemplate ??= count($commands) > 1
+                    ? '{path | dirname | basename}:{command | slug}'
+                    : null;
+                $tasks = [];
+                $index = 0;
+                foreach ($matchedTasks as $matchedTask) {
+                    foreach ($commands as $taskCommand) {
+                        $tasks[] = new Task($matchedTask->path, $index++, $matchedTask->variables, $taskCommand);
+                    }
                 }
             } else {
                 $command = null;

@@ -13,12 +13,13 @@ final class TemplateRendererTest extends TestCase
     public function testRendersVariablesAndFiltersRelativeToInvocationCwd(): void
     {
         $renderer = new TemplateRenderer();
-        $task = new Task('packages/foo/phpstan.neon', 2);
+        $task = new Task('packages/foo/phpstan.neon', 2, command: 'composer test');
 
         $this->assertSame('packages/foo', $renderer->render('{path | dirname}', $task, '/repo'));
         $this->assertSame('foo', $renderer->render('{path | dirname | basename}', $task, '/repo'));
         $this->assertSame('phpstan', $renderer->render('{path | filename}', $task, '/repo'));
         $this->assertSame('2', $renderer->render('{index}', $task, '/repo'));
+        $this->assertSame('composer-test', $renderer->render('{command | slug}', $task, '/repo'));
     }
 
     public function testRendersExtraTaskVariables(): void

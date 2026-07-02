@@ -25,7 +25,7 @@ vendor/bin/pharallel \
 
 Each command becomes its own task, and tasks run in parallel with prefixed output, a per-task summary, and the highest exit code as the result. Repeat `--command` when you want `npm-run-all` style behaviour. See [Composer scripts](#composer-scripts) for running named scripts concurrently.
 
-For monorepos, provide a path pattern and a command template instead — one task is created per matched path:
+For monorepos, provide a path pattern and a command template instead. One task is created per matched path:
 
 ```bash
 vendor/bin/pharallel \
@@ -52,6 +52,19 @@ vendor/bin/pharallel \
   --processes=4
 ```
 
+Repeat `--command` with `--path-pattern` to run multiple commands for each matched path:
+
+```bash
+vendor/bin/pharallel \
+  --path-pattern='packages/*/composer.json' \
+  --command='composer validate' \
+  --command='composer test' \
+  --cwd='{path | dirname}' \
+  --processes=4
+```
+
+By default, labels for multiple commands per matched path include both the matched path and the command, such as `foo:composer-validate` and `foo:composer-test`.
+
 When `--cwd` is set, use `{path | realpath}` for file paths that must still point back to the matched file:
 
 ```bash
@@ -76,12 +89,12 @@ Options:
 
 | Option | Description |
 | --- | --- |
-| `--command=CMD` | Command to run. Repeatable when no path pattern is provided; with `--path-pattern`, provide exactly one command template. |
-| `COMMAND ...` | Positional shorthand for `--command`. With `--path-pattern`, provide exactly one command. |
+| `--command=CMD` | Command to run. Repeatable; with `--path-pattern`, each command is rendered once per matched path. |
+| `COMMAND ...` | Positional shorthand for `--command`. |
 | `--path-pattern=GLOB` | Match paths to create tasks. Repeatable; comma-separated values are supported. |
 | `--processes=N` | Number of commands to run at once. Default: `auto` (CPU core count). |
 | `--cwd=TEMPLATE` | Working directory template for each task. Default: invocation directory. |
-| `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`, or `{path | slug}` for a command list. |
+| `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`, `{path | dirname | basename}:{command | slug}` for multiple commands per path, or `{path | slug}` for a command list. |
 | `--config=PATH` | PHP config file for custom filters, variables, and defaults. |
 | `--dry-run` | Print the rendered command per task without executing anything. |
 | `--fail-fast` | Stop scheduling and terminate running tasks after the first failure. |
@@ -110,6 +123,7 @@ vendor/bin/pharallel \
 | Variable | Description |
 | --- | --- |
 | `{path}` | Matched path, rendered relative to the invocation directory when possible. For a command list, the command string itself. |
+| `{command}` | Command template for the current task. |
 | `{index}` | Zero-based task index. |
 
 ### Filters
@@ -193,7 +207,7 @@ vendor/bin/pharallel \
   --command='composer test'
 ```
 
-The `command` default also accepts a list, which runs as a command list when no path patterns are configured:
+The `command` default also accepts a list. Without path patterns, each command becomes its own task. With path patterns, each command runs once per matched path:
 
 ```php
 'defaults' => [

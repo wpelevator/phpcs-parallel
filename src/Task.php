@@ -16,9 +16,15 @@ final class Task
     /** @return array<string, string> */
     public function variables(): array
     {
-        return array_merge($this->variables, [
+        $variables = array_merge($this->variables, [
             'path' => $this->path,
             'index' => (string) $this->index,
         ]);
+
+        if ($this->command !== null) {
+            $variables['command'] = $this->command;
+        }
+
+        return $variables;
     }
 }
