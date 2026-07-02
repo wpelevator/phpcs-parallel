@@ -1,6 +1,6 @@
 # pharallel
 
-[![Test](https://github.com/wpelevator/pharallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/pharallel/actions/workflows/ci.yml)
+[![Test](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml)
 
 Run one command per matched path, optionally in parallel.
 
