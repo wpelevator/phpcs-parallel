@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\Pharallel;
+namespace WPElevator\RunParallel;
 
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 
@@ -98,7 +98,7 @@ final class Application
         }
     }
 
-    private function stringDefault(PharallelConfig $config, string $name): ?string
+    private function stringDefault(RunParallelConfig $config, string $name): ?string
     {
         if (! array_key_exists($name, $config->defaults)) {
             return null;
@@ -113,7 +113,7 @@ final class Application
     }
 
     /** @return list<string> */
-    private function pathPatternDefault(PharallelConfig $config): array
+    private function pathPatternDefault(RunParallelConfig $config): array
     {
         if (! array_key_exists('path-pattern', $config->defaults)) {
             return [];
@@ -140,7 +140,7 @@ final class Application
     }
 
     /** @return list<string> */
-    private function commandsDefault(PharallelConfig $config): array
+    private function commandsDefault(RunParallelConfig $config): array
     {
         if (! array_key_exists('command', $config->defaults)) {
             return [];
@@ -166,14 +166,14 @@ final class Application
         return [(string) $value];
     }
 
-    private function processesDefault(PharallelConfig $config): int
+    private function processesDefault(RunParallelConfig $config): int
     {
         $value = $this->stringDefault($config, 'processes');
 
         return $value === null ? CpuCount::detect() : Processes::parse($value);
     }
 
-    private function boolDefault(PharallelConfig $config, string $name): bool
+    private function boolDefault(RunParallelConfig $config, string $name): bool
     {
         if (! array_key_exists($name, $config->defaults)) {
             return false;

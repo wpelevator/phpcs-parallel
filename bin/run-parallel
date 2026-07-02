@@ -3,5 +3,5 @@
 
 require __DIR__ . '/../src/bootstrap.php';
 
-$application = (new \WPElevator\Pharallel\ApplicationFactory())->create();
+$application = (new \WPElevator\RunParallel\ApplicationFactory())->create();
 exit($application->run($argv));

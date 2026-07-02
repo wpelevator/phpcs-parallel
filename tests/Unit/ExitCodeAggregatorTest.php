@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use WPElevator\Pharallel\ExitCodeAggregator;
+use WPElevator\RunParallel\ExitCodeAggregator;
 
 final class ExitCodeAggregatorTest extends TestCase
 {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\TestCase;
-use WPElevator\Pharallel\CommandTemplate;
-use WPElevator\Pharallel\Task;
-use WPElevator\Pharallel\TemplateRenderer;
+use WPElevator\RunParallel\CommandTemplate;
+use WPElevator\RunParallel\Task;
+use WPElevator\RunParallel\TemplateRenderer;
 
 final class CommandTemplateTest extends TestCase
 {

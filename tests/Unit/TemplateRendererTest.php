@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\TestCase;
-use WPElevator\Pharallel\Task;
-use WPElevator\Pharallel\TemplateRenderer;
+use WPElevator\RunParallel\Task;
+use WPElevator\RunParallel\TemplateRenderer;
 
 final class TemplateRendererTest extends TestCase
 {

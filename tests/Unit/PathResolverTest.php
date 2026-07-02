@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\TestCase;
-use WPElevator\Pharallel\PathResolver;
+use WPElevator\RunParallel\PathResolver;
 
 final class PathResolverTest extends TestCase
 {
@@ -13,7 +13,7 @@ final class PathResolverTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->workspace = new TempWorkspace('pharallel-path');
+        $this->workspace = new TempWorkspace('run-parallel-path');
     }
 
     protected function tearDown(): void

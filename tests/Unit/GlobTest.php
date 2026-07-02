@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\TestCase;
-use WPElevator\Pharallel\Glob;
+use WPElevator\RunParallel\Glob;
 
 final class GlobTest extends TestCase
 {

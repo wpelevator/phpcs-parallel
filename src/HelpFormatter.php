@@ -1,17 +1,17 @@
 <?php
 
-namespace WPElevator\Pharallel;
+namespace WPElevator\RunParallel;
 
 final class HelpFormatter
 {
     public function format(): string
     {
         return <<<'TXT'
-pharallel - run a list of commands, or one command per matched path, in parallel.
+run-parallel - run a list of commands, or one command per matched path, in parallel.
 
 Usage:
-  pharallel --command=CMD [--command=CMD ...] [options]
-  pharallel --path-pattern=GLOB --command=TEMPLATE [options]
+  run-parallel --command=CMD [--command=CMD ...] [options]
+  run-parallel --path-pattern=GLOB --command=TEMPLATE [options]
 
 Arguments:
   COMMAND              Positional shorthand for --command. Quote each command so it
@@ -42,13 +42,13 @@ Filters:
   dirname, basename, realpath, relative, slug, ext, filename
 
 Examples:
-  pharallel --command='composer lint' --command='composer test' --command='composer analyse'
+  run-parallel --command='composer lint' --command='composer test' --command='composer analyse'
 
-  pharallel --path-pattern='packages/*/phpstan.neon' \
+  run-parallel --path-pattern='packages/*/phpstan.neon' \
     --command='phpstan analyse --configuration={path | realpath} {path | dirname}' \
     --processes=4
 
-  pharallel --path-pattern='packages/*/composer.json' \
+  run-parallel --path-pattern='packages/*/composer.json' \
     --command='composer validate' --command='composer test' \
     --cwd='{path | dirname}' --processes=4
 

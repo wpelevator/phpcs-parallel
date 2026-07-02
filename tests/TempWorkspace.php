@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;

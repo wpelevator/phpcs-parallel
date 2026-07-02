@@ -1,6 +1,6 @@
 <?php
 
-namespace WPElevator\Pharallel;
+namespace WPElevator\RunParallel;
 
 final class ArgsParser
 {
@@ -69,7 +69,7 @@ final class ArgsParser
 
             if (str_starts_with($arg, '-')) {
                 throw new \InvalidArgumentException(
-                    'Unknown pharallel option: ' . $arg . '. Put command options inside --command.'
+                    'Unknown run-parallel option: ' . $arg . '. Put command options inside --command.'
                 );
             }
 

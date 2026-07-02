@@ -1,8 +1,8 @@
 <?php
 
-namespace WPElevator\Pharallel;
+namespace WPElevator\RunParallel;
 
-final class PharallelConfig
+final class RunParallelConfig
 {
     /**
      * @param array<string, callable(string, Task, string): string> $filters

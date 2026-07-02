@@ -1,5 +1,5 @@
 {
-    "name": "wpelevator/pharallel",
+    "name": "wpelevator/run-parallel",
     "description": "Run one command per matched path, optionally in parallel.",
     "type": "library",
     "license": "MIT",
@@ -13,18 +13,21 @@
         "phpstan/phpstan": "^2.2",
         "squizlabs/php_codesniffer": "^4.0"
     },
+    "replace": {
+        "wpelevator/phpcs-parallel": "self.version"
+    },
     "autoload": {
         "psr-4": {
-            "WPElevator\\Pharallel\\": "src/"
+            "WPElevator\\RunParallel\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "WPElevator\\Pharallel\\Tests\\": "tests/"
+            "WPElevator\\RunParallel\\Tests\\": "tests/"
         }
     },
     "bin": [
-        "bin/pharallel"
+        "bin/run-parallel"
     ],
     "scripts": {
         "lint": "phpcs",

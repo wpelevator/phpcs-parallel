@@ -2,10 +2,10 @@
 /**
  * Sample file using WordPress Coding Standards (WPCS).
  *
- * @package WPElevator\PHPCS_Parallel\Example
+ * @package WPElevator\RunParallel\Example
  */
 
-namespace WPElevator\PHPCS_Parallel\Example;
+namespace WPElevator\RunParallel\Example;
 
 /**
  * Sample class using WordPress Coding Standards (WPCS).

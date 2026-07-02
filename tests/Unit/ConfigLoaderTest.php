@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\TestCase;
-use WPElevator\Pharallel\ConfigLoader;
-use WPElevator\Pharallel\Task;
+use WPElevator\RunParallel\ConfigLoader;
+use WPElevator\RunParallel\Task;
 
 final class ConfigLoaderTest extends TestCase
 {
@@ -14,7 +14,7 @@ final class ConfigLoaderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->workspace = new TempWorkspace('pharallel-config');
+        $this->workspace = new TempWorkspace('run-parallel-config');
     }
 
     protected function tearDown(): void
@@ -24,7 +24,7 @@ final class ConfigLoaderTest extends TestCase
 
     public function testLoadsFiltersVariablesAndDefaults(): void
     {
-        $this->workspace->writeFile('pharallel.php', <<<'PHP'
+        $this->workspace->writeFile('run-parallel.php', <<<'PHP'
 <?php
 
 return [
@@ -42,7 +42,7 @@ return [
 ];
 PHP);
 
-        $config = (new ConfigLoader())->load('pharallel.php', $this->workspace->dir);
+        $config = (new ConfigLoader())->load('run-parallel.php', $this->workspace->dir);
 
         $this->assertArrayHasKey('package', $config->filters);
         $this->assertSame(

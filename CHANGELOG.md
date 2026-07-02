@@ -4,6 +4,12 @@ Notable changes to this project are documented in this file. The format follows 
 
 ## Unreleased
 
+### Changed
+
+- Renamed the package and executable to `run-parallel`; the Composer package is now `wpelevator/run-parallel`.
+- **Breaking:** the PHP namespace changed from `WPElevator\Pharallel` to `WPElevator\RunParallel` (affects custom filter signatures referencing `Task`).
+- Composer metadata now replaces the previous package names `wpelevator/phpcs-parallel`.
+
 ### Added
 
 - `--dry-run` prints the rendered command, working directory, and label per task without executing anything.
@@ -14,17 +20,14 @@ Notable changes to this project are documented in this file. The format follows 
 - Task label prefixes are colored when the output is a terminal.
 - `SIGINT`/`SIGTERM` now stop running child processes before exiting (when the `pcntl` extension is available).
 
-### Changed
-
 - `--processes` now defaults to `auto` (the CPU core count) instead of `1`; pass `--processes=1` for serial execution.
 - **Breaking:** glob patterns now use standard semantics — `*` and `?` no longer match across `/`. Previously `packages/*/phpcs.xml` also matched `packages/foo/nested/phpcs.xml`; use `**` for recursive matching.
-- **Breaking:** the PHP namespace changed from `WPElevator\PHPCSParallel` to `WPElevator\Pharallel` (affects custom filter signatures referencing `Task`).
 - Child process output is now written raw, so tool output containing `<tag>`-like text is no longer mangled by console formatting.
 - The echoed `$ command` line only quotes arguments that need quoting.
 
 ### Removed
 
-- **Breaking:** `squizlabs/php_codesniffer` is no longer a dependency. PHPCS was never used by pharallel itself; install it in your project when your commands invoke `phpcs`/`phpcbf`.
+- **Breaking:** `squizlabs/php_codesniffer` is no longer a dependency. PHPCS was never used by run-parallel itself; install it in your project when your commands invoke `phpcs`/`phpcbf`.
 
 ## 1.1.0 and earlier
 

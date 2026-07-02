@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace WPElevator\Pharallel\Tests;
+namespace WPElevator\RunParallel\Tests;
 
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-final class PharallelApplicationTest extends TestCase
+final class RunParallelApplicationTest extends TestCase
 {
     private string $php;
     private string $bin;
@@ -16,8 +16,8 @@ final class PharallelApplicationTest extends TestCase
     protected function setUp(): void
     {
         $this->php = PHP_BINARY;
-        $this->bin = dirname(__DIR__, 2) . '/bin/pharallel';
-        $this->workspace = new TempWorkspace('pharallel-test');
+        $this->bin = dirname(__DIR__, 2) . '/bin/run-parallel';
+        $this->workspace = new TempWorkspace('run-parallel-test');
     }
 
     protected function tearDown(): void
@@ -101,6 +101,19 @@ final class PharallelApplicationTest extends TestCase
         $this->assertSame(0, $result['code'], $result['stderr']);
         $this->assertStringContainsString('[composer-lint] $ composer lint', $result['stdout']);
         $this->assertStringContainsString('composer test -- --testsuite=Unit', $result['stdout']);
+    }
+
+    public function testHelpUsesRunParallelCommandName(): void
+    {
+        $result = $this->runCommand([
+            $this->php,
+            $this->bin,
+            '--help',
+        ]);
+
+        $this->assertSame(0, $result['code'], $result['stderr']);
+        $this->assertStringContainsString('run-parallel - run a list of commands', $result['stdout']);
+        $this->assertStringContainsString('run-parallel --command=CMD', $result['stdout']);
     }
 
     public function testPathPatternRunsEachCommandForEachMatchWithDistinctDefaultLabels(): void
@@ -230,7 +243,7 @@ PHP);
     {
         $this->workspace->writeFile('packages/a/composer.json', '{}');
         $tool = $this->writeFakeTool();
-        $this->workspace->writeFile('pharallel.php', <<<PHP
+        $this->workspace->writeFile('run-parallel.php', <<<PHP
 <?php
 
 return [
@@ -252,7 +265,7 @@ PHP);
         $result = $this->runCommand([
             $this->php,
             $this->bin,
-            '--config=pharallel.php',
+            '--config=run-parallel.php',
         ]);
 
         $this->assertSame(0, $result['code'], $result['stderr']);
@@ -262,7 +275,7 @@ PHP);
     public function testConfigCommandListRunsWithoutPathPatterns(): void
     {
         $tool = $this->writeFakeTool();
-        $this->workspace->writeFile('pharallel.php', <<<PHP
+        $this->workspace->writeFile('run-parallel.php', <<<PHP
 <?php
 
 return [
@@ -275,7 +288,7 @@ PHP);
         $result = $this->runCommand([
             $this->php,
             $this->bin,
-            '--config=pharallel.php',
+            '--config=run-parallel.php',
         ]);
 
         $this->assertSame(0, $result['code'], $result['stderr']);

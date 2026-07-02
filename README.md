@@ -1,23 +1,25 @@
-# pharallel
+# run-parallel
 
-[![Test](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/phpcs-parallel/actions/workflows/ci.yml)
+[![Test](https://github.com/wpelevator/run-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/wpelevator/run-parallel/actions/workflows/ci.yml)
 
 Run a list of commands, or one command per matched path, in parallel.
 
-`pharallel` is useful for running Composer scripts concurrently — think `npm-run-all` for PHP — and for monorepos where each package has its own tool config. It discovers paths, renders one command per path, and executes those commands with prefixed output.
+`run-parallel` is useful for running Composer scripts concurrently — think `npm-run-all` for PHP — and for monorepos where each package has its own tool config. It discovers paths, renders one command per path, and executes those commands with prefixed output.
 
 ## Install
 
 ```bash
-composer require --dev wpelevator/pharallel
+composer require --dev wpelevator/run-parallel
 ```
+
+The package declares Composer replacements for the earlier package name `wpelevator/phpcs-parallel` so dependent packages can move to `wpelevator/run-parallel` without installing duplicate copies.
 
 ## Usage
 
 At its simplest, pass each command with `--command`:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --command='composer lint' \
   --command='composer test' \
   --command='composer analyse'
@@ -28,7 +30,7 @@ Each command becomes its own task, and tasks run in parallel with prefixed outpu
 For monorepos, provide a path pattern and a command template instead. One task is created per matched path:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpstan.neon' \
   --command='phpstan analyse --configuration={path} {path | dirname}'
 ```
@@ -36,7 +38,7 @@ vendor/bin/pharallel \
 Tasks run in parallel by default, one process per CPU core. Use `--processes` to control the concurrency (`--processes=1` runs serially):
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpstan.neon' \
   --command='phpstan analyse --configuration={path} {path | dirname} --memory-limit=1G' \
   --processes=4
@@ -45,7 +47,7 @@ vendor/bin/pharallel \
 Use `--cwd` when a tool should run from the matched package directory:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/composer.json' \
   --command='composer test' \
   --cwd='{path | dirname}' \
@@ -55,7 +57,7 @@ vendor/bin/pharallel \
 Repeat `--command` with `--path-pattern` to run multiple commands for each matched path:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/composer.json' \
   --command='composer validate' \
   --command='composer test' \
@@ -68,7 +70,7 @@ By default, labels for multiple commands per matched path include both the match
 When `--cwd` is set, use `{path | realpath}` for file paths that must still point back to the matched file:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpunit.xml.dist' \
   --command='phpunit --configuration={path | realpath}' \
   --cwd='{path | dirname}' \
@@ -78,7 +80,7 @@ vendor/bin/pharallel \
 Use `--label` when you want custom output prefixes:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpunit.xml.dist' \
   --command='phpunit --configuration={path}' \
   --label='{path | dirname | basename}' \
@@ -112,7 +114,7 @@ Patterns use glob semantics: `*` and `?` match within a single path segment and 
 Use `--dry-run` to preview which paths matched and what will run:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpcs.xml.dist' \
   --command='phpcs --standard={path} {path | dirname}' \
   --dry-run
@@ -130,7 +132,7 @@ vendor/bin/pharallel \
 
 Variables can be piped through filters with `|`. Filters apply left to right, so `{path | dirname | basename}` takes the directory of the matched path, then its last segment.
 
-Example outputs below assume the matched path is `packages/foo/phpcs.xml.dist` and `pharallel` was invoked from `/repo`:
+Example outputs below assume the matched path is `packages/foo/phpcs.xml.dist` and `run-parallel` was invoked from `/repo`:
 
 | Filter | Description | Example output |
 | --- | --- | --- |
@@ -148,25 +150,25 @@ Commands are executed directly as argv, not through a shell. Pipes, redirects, a
 
 ### Binary resolution
 
-The first word of each command is resolved through the `PATH` environment variable, which child processes inherit from `pharallel`. When `pharallel` runs as a [Composer script](#composer-scripts), Composer prepends the project's `vendor/bin` directory to `PATH` for the duration of the run, so bare binary names like `phpcs` or `phpstan` resolve to the project-local binaries — even when `--cwd` points at a package subdirectory, because the prepended `vendor/bin` path is absolute.
+The first word of each command is resolved through the `PATH` environment variable, which child processes inherit from `run-parallel`. When `run-parallel` runs as a [Composer script](#composer-scripts), Composer prepends the project's `vendor/bin` directory to `PATH` for the duration of the run, so bare binary names like `phpcs` or `phpstan` resolve to the project-local binaries — even when `--cwd` points at a package subdirectory, because the prepended `vendor/bin` path is absolute.
 
-When invoking `vendor/bin/pharallel` directly from the shell, `PATH` is not modified, so bare names resolve to whatever is installed globally. In that case, reference project-local binaries by path:
+When invoking `vendor/bin/run-parallel` directly from the shell, `PATH` is not modified, so bare names resolve to whatever is installed globally. In that case, reference project-local binaries by path:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpcs.xml.dist' \
   --command='vendor/bin/phpcs --standard={path} {path | dirname}'
 ```
 
 ### Working directory
 
-By default, every command runs in the directory where `pharallel` was invoked. Use `--cwd` to run each command from a different directory — typically the matched package directory via `--cwd='{path | dirname}'`. The template is rendered once per task, and a relative result is resolved against the invocation directory.
+By default, every command runs in the directory where `run-parallel` was invoked. Use `--cwd` to run each command from a different directory — typically the matched package directory via `--cwd='{path | dirname}'`. The template is rendered once per task, and a relative result is resolved against the invocation directory.
 
 `--cwd` changes the child process working directory, but template variables are still rendered relative to the original invocation directory. Use `{path | realpath}` when the child process needs an absolute path.
 
 ## Configuration
 
-Use `--config=pharallel.php` to load custom filters, variables, and default option values.
+Use `--config=run-parallel.php` to load custom filters, variables, and default option values.
 
 ```php
 <?php
@@ -196,14 +198,14 @@ return [
 Then run:
 
 ```bash
-vendor/bin/pharallel --config=pharallel.php
+vendor/bin/run-parallel --config=run-parallel.php
 ```
 
 CLI options override config defaults, so you can still replace individual values:
 
 ```bash
-vendor/bin/pharallel \
-  --config=pharallel.php \
+vendor/bin/run-parallel \
+  --config=run-parallel.php \
   --command='composer test'
 ```
 
@@ -219,7 +221,7 @@ Custom filters receive the current value, the current task, and the invocation w
 
 ```php
 'filters' => [
-    'artifactName' => static function (string $value, \WPElevator\Pharallel\Task $task, string $cwd): string {
+    'artifactName' => static function (string $value, \WPElevator\RunParallel\Task $task, string $cwd): string {
         return $task->index . '-' . basename(dirname($value));
     },
 ],
@@ -232,7 +234,7 @@ Custom filters receive the current value, the current task, and the invocation w
 Run PHPCS once per package ruleset:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpcs.xml.dist' \
   --command='phpcs --standard={path} {path | dirname}'
 ```
@@ -240,7 +242,7 @@ vendor/bin/pharallel \
 Run PHPCS in parallel and pass PHPCS options directly in the command template:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpcs.xml.dist' \
   --command='phpcs --standard={path} {path | dirname} -s --report=summary' \
   --processes=4
@@ -249,7 +251,7 @@ vendor/bin/pharallel \
 If your project uses multiple PHPCS config names, repeat `--path-pattern`:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/.phpcs.xml' \
   --path-pattern='packages/*/phpcs.xml' \
   --path-pattern='packages/*/.phpcs.xml.dist' \
@@ -261,7 +263,7 @@ vendor/bin/pharallel \
 ### PHPCBF
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpcs.xml.dist' \
   --command='phpcbf --standard={path} {path | dirname}' \
   --processes=4
@@ -270,7 +272,7 @@ vendor/bin/pharallel \
 ### PHPStan
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpstan.neon' \
   --command='phpstan analyse --configuration={path} {path | dirname} --memory-limit=1G' \
   --processes=4
@@ -279,7 +281,7 @@ vendor/bin/pharallel \
 ### PHPUnit
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/phpunit.xml.dist' \
   --command='phpunit --configuration={path}' \
   --processes=4
@@ -290,7 +292,7 @@ vendor/bin/pharallel \
 The command template accepts any Composer invocation, not just `composer test`:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/composer.json' \
   --command='composer validate' \
   --cwd='{path | dirname}' \
@@ -298,7 +300,7 @@ vendor/bin/pharallel \
 ```
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/composer.json' \
   --command='composer install --no-interaction' \
   --cwd='{path | dirname}' \
@@ -308,7 +310,7 @@ vendor/bin/pharallel \
 Run a named Composer script the same way:
 
 ```bash
-vendor/bin/pharallel \
+vendor/bin/run-parallel \
   --path-pattern='packages/*/composer.json' \
   --command='composer run-script lint' \
   --cwd='{path | dirname}' \
@@ -317,7 +319,7 @@ vendor/bin/pharallel \
 
 ## Composer scripts
 
-Run existing Composer scripts in parallel by wrapping them in a `pharallel` script, `npm-run-all` style:
+Run existing Composer scripts in parallel by wrapping them in a `run-parallel` script, `npm-run-all` style:
 
 ```json
 {
@@ -325,20 +327,20 @@ Run existing Composer scripts in parallel by wrapping them in a `pharallel` scri
     "lint": "phpcs",
     "analyse": "phpstan",
     "test": "phpunit",
-    "check": "pharallel --command='composer lint' --command='composer analyse' --command='composer test'"
+    "check": "run-parallel --command='composer lint' --command='composer analyse' --command='composer test'"
   }
 }
 ```
 
 Now `composer check` runs all three concurrently with prefixed output and a summary, and fails if any of them fail.
 
-Composer adds `vendor/bin` to `PATH` when running scripts, so both `pharallel` and the binaries referenced in commands can use bare names here (see [Binary resolution](#binary-resolution)):
+Composer adds `vendor/bin` to `PATH` when running scripts, so both `run-parallel` and the binaries referenced in commands can use bare names here (see [Binary resolution](#binary-resolution)):
 
 ```json
 {
   "scripts": {
-    "lint": "pharallel --path-pattern='packages/*/phpcs.xml.dist' --command='phpcs --standard={path} {path | dirname} -s' --processes=4",
-    "test:packages": "pharallel --path-pattern='packages/*/phpunit.xml.dist' --command='phpunit --configuration={path}' --processes=4"
+    "lint": "run-parallel --path-pattern='packages/*/phpcs.xml.dist' --command='phpcs --standard={path} {path | dirname} -s' --processes=4",
+    "test:packages": "run-parallel --path-pattern='packages/*/phpunit.xml.dist' --command='phpunit --configuration={path}' --processes=4"
   }
 }
 ```
@@ -370,10 +372,10 @@ Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `te
 
 ## Why not …?
 
-- **`phpcs --parallel`, PHPStan workers, ParaTest** — these parallelize *within one config*. `pharallel` parallelizes *across configs* (one run per package), and the two compose: each `pharallel` task can itself use the tool's own parallelism.
-- **[veewee/composer-run-parallel](https://github.com/veewee/composer-run-parallel)** — runs named Composer scripts concurrently, like `pharallel`'s command-list mode, but has no path discovery or per-path command templating.
+- **`phpcs --parallel`, PHPStan workers, ParaTest** — these parallelize *within one config*. `run-parallel` parallelizes *across configs* (one run per package), and the two compose: each `run-parallel` task can itself use the tool's own parallelism.
+- **[veewee/composer-run-parallel](https://github.com/veewee/composer-run-parallel)** — runs named Composer scripts concurrently, like `run-parallel`'s command-list mode, but has no path discovery or per-path command templating.
 - **[symplify/monorepo-builder](https://github.com/symplify/monorepo-builder)** — manages `composer.json` merging and releases; it is not a task runner.
-- **Turborepo/Nx-class runners** — bring dependency graphs, caching, and affected-detection at the cost of lock-in and configuration. `pharallel` is deliberately the small end of that spectrum: think GNU `parallel` for Composer projects.
+- **Turborepo/Nx-class runners** — bring dependency graphs, caching, and affected-detection at the cost of lock-in and configuration. `run-parallel` is deliberately the small end of that spectrum: think GNU `parallel` for Composer projects.
 
 ## Notes
 

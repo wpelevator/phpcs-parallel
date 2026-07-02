@@ -1,13 +1,13 @@
 <?php
 
-namespace WPElevator\Pharallel;
+namespace WPElevator\RunParallel;
 
 final class ConfigLoader
 {
-    public function load(?string $path, string $cwd): PharallelConfig
+    public function load(?string $path, string $cwd): RunParallelConfig
     {
         if ($path === null || $path === '') {
-            return new PharallelConfig();
+            return new RunParallelConfig();
         }
 
         $configPath = Path::isAbsolute($path) ? $path : $cwd . DIRECTORY_SEPARATOR . $path;
@@ -20,7 +20,7 @@ final class ConfigLoader
             throw new \RuntimeException('Config file must return an array: ' . $path);
         }
 
-        return new PharallelConfig(
+        return new RunParallelConfig(
             $this->loadFilters($data['filters'] ?? []),
             $this->loadVariables($data['variables'] ?? []),
             $this->loadDefaults($data['defaults'] ?? [])
