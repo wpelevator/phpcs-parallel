@@ -72,13 +72,30 @@ Options:
 | `--label=TEMPLATE` | Output label template for each task. Default: `{path | dirname | basename}`. |
 | `--config=PATH` | PHP config file for custom filters, variables, and defaults. |
 
-Template variables and filters:
+### Template variables
 
-| Syntax | Description |
+| Variable | Description |
 | --- | --- |
 | `{path}` | Matched path, rendered relative to the invocation directory when possible. |
 | `{index}` | Zero-based task index. |
-| `dirname`, `basename`, `realpath`, `relative`, `slug`, `ext`, `filename` | Supported filters. |
+
+### Filters
+
+Variables can be piped through filters with `|`. Filters apply left to right, so `{path | dirname | basename}` takes the directory of the matched path, then its last segment.
+
+Example outputs below assume the matched path is `packages/foo/phpcs.xml.dist` and `pharallel` was invoked from `/repo`:
+
+| Filter | Description | Example output |
+| --- | --- | --- |
+| `dirname` | Parent directory of the path. | `packages/foo` |
+| `basename` | Last segment of the path. | `phpcs.xml.dist` |
+| `filename` | Last segment without its final extension. | `phpcs.xml` |
+| `ext` | Final extension without the dot. | `dist` |
+| `realpath` | Absolute path. Relative values are resolved against the invocation directory; if the path does not exist, the joined path is returned unresolved. | `/repo/packages/foo/phpcs.xml.dist` |
+| `relative` | Path relative to the invocation directory (`.` for the directory itself). Paths outside it are returned unchanged. | `packages/foo/phpcs.xml.dist` |
+| `slug` | Replaces every run of characters other than letters, digits, `.`, `_`, and `-` with a single `-`, then trims leading and trailing dashes. Useful for labels and artifact names. | `packages-foo-phpcs.xml.dist` |
+
+Referencing an unknown variable or filter in a template is an error and fails the run. Custom filters and variables can be added via a [config file](#configuration).
 
 Commands are executed directly as argv, not through a shell. Pipes, redirects, and shell expansion are not interpreted.
 
