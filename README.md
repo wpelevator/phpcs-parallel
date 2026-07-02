@@ -370,12 +370,16 @@ composer test:coverage
 
 Coverage output is written to the terminal, `tests/coverage/clover.xml`, and `tests/coverage/html`.
 
+Use the self test to run all checks concurrently:
+
+```bash
+composer all
+```
+
 ## Why not …?
 
 - **`phpcs --parallel`, PHPStan workers, ParaTest** — these parallelize *within one config*. `run-parallel` parallelizes *across configs* (one run per package), and the two compose: each `run-parallel` task can itself use the tool's own parallelism.
 - **[veewee/composer-run-parallel](https://github.com/veewee/composer-run-parallel)** — runs named Composer scripts concurrently, like `run-parallel`'s command-list mode, but has no path discovery or per-path command templating.
-- **[symplify/monorepo-builder](https://github.com/symplify/monorepo-builder)** — manages `composer.json` merging and releases; it is not a task runner.
-- **Turborepo/Nx-class runners** — bring dependency graphs, caching, and affected-detection at the cost of lock-in and configuration. `run-parallel` is deliberately the small end of that spectrum: think GNU `parallel` for Composer projects.
 
 ## Notes
 
